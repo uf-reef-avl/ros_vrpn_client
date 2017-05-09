@@ -1,0 +1,6 @@
+<launch>
+<arg name="name" default="marker" />
+    
+<node pkg="ros_vrpn_client" name="$(arg name)" type="ros_vrpn_client" args="_vrpn_server_ip:=192.168.1.104" required="true" output="screen"/>
+
+</launch>
