@@ -1,7 +1,7 @@
 /*
 # Copyright (c) 2011, Georgia Tech Research Corporation
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
 #     * Neither the name of the Georgia Tech Research Corporation nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -40,7 +40,7 @@
 #include <math.h>
 
 #include <vrpn_Connection.h>
-#include <vrpn_Tracker.h> 
+#include <vrpn_Tracker.h>
 
 // Daman
 //#include <LinearMath/btQuaternion.h>
@@ -52,6 +52,7 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t);
 class TargetState{
     public:
         geometry_msgs::TransformStamped target;
+        geometry_msgs::PoseStamped target_pose_stamped;
 };
 
 
@@ -66,15 +67,17 @@ vrpn_TRACKERCB prev_vrpn_data;
 class Rigid_Body {
     private:
         ros::Publisher target_pub;
+        ros::Publisher pose_stamp_pub;
         tf::TransformBroadcaster br;
         vrpn_Connection *connection;
         vrpn_Tracker_Remote *tracker;
 
     public:
         Rigid_Body(ros::NodeHandle& nh, std::string server_ip,
-                   int port) 
+                   int port)
         {
             target_pub = nh.advertise<geometry_msgs::TransformStamped>("pose", 100);
+            pose_stamp_pub = nh.advertise<geometry_msgs::PoseStamped>("pose_stamped",100);
             std::string connec_nm = server_ip + ":" + boost::lexical_cast<std::string>(port);
             connection = vrpn_get_connection_by_name(connec_nm.c_str());
             std::string target_name = nh.getNamespace().substr(1);
@@ -86,7 +89,8 @@ class Rigid_Body {
         {
             br.sendTransform(target_state->target);
             target_pub.publish(target_state->target);
-        }    	
+            pose_stamp_pub.publish(target_state->target_pose_stamped);
+        }
 
         void step_vrpn()
         {
@@ -149,6 +153,19 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
     target_state->target.child_frame_id = frame_id;
     target_state->target.header.stamp = ros::Time::now();
 
+
+    target_state->target_pose_stamped.pose.position.x = pos.x();
+    target_state->target_pose_stamped.pose.position.y = pos.y();
+    target_state->target_pose_stamped.pose.position.z = pos.z();
+
+    target_state->target_pose_stamped.pose.orientation.x = q_rot.x();
+    target_state->target_pose_stamped.pose.orientation.y = q_rot.y();
+    target_state->target_pose_stamped.pose.orientation.z = q_rot.z();
+    target_state->target_pose_stamped.pose.orientation.w = q_rot.w();
+
+    target_state->target_pose_stamped.header.frame_id = "optitrack";
+    target_state->target_pose_stamped.header.stamp = ros::Time::now();
+
 //        std::cout<<"marker x"<<pos.x()<<std::endl;
 //        std::cout<<"marker y"<<pos.y()<<std::endl;
 //        std::cout<<"marker z"<<pos.z()<<std::endl;
@@ -195,6 +212,3 @@ int main(int argc, char* argv[])
     }
 	return 0;
 }
-
-
-
