@@ -53,6 +53,9 @@ class TargetState{
     public:
         geometry_msgs::TransformStamped target;
         geometry_msgs::PoseStamped target_pose_stamped;
+
+        geometry_msgs::TransformStamped ned_target;
+        geometry_msgs::PoseStamped ned_pose_stamped;
 };
 
 
@@ -68,6 +71,8 @@ class Rigid_Body {
     private:
         ros::Publisher target_pub;
         ros::Publisher pose_stamp_pub;
+        ros::Publisher ned_target_pub;
+        ros::Publisher ned_pose_stamp_pub;
         tf::TransformBroadcaster br;
         vrpn_Connection *connection;
         vrpn_Tracker_Remote *tracker;
@@ -76,8 +81,12 @@ class Rigid_Body {
         Rigid_Body(ros::NodeHandle& nh, std::string server_ip,
                    int port)
         {
-            target_pub = nh.advertise<geometry_msgs::TransformStamped>("pose", 100);
-            pose_stamp_pub = nh.advertise<geometry_msgs::PoseStamped>("pose_stamped",100);
+            target_pub = nh.advertise<geometry_msgs::TransformStamped>("nwu/pose", 100);
+            pose_stamp_pub = nh.advertise<geometry_msgs::PoseStamped>("nwu/pose_stamped",100);
+
+            ned_target_pub = nh.advertise<geometry_msgs::TransformStamped>("ned/pose", 100);
+            ned_pose_stamp_pub = nh.advertise<geometry_msgs::PoseStamped>("ned/pose_stamped",100);
+
             std::string connec_nm = server_ip + ":" + boost::lexical_cast<std::string>(port);
             connection = vrpn_get_connection_by_name(connec_nm.c_str());
             std::string target_name = nh.getNamespace().substr(1);
@@ -90,6 +99,9 @@ class Rigid_Body {
             br.sendTransform(target_state->target);
             target_pub.publish(target_state->target);
             pose_stamp_pub.publish(target_state->target_pose_stamped);
+
+            ned_target_pub.publish(target_state->ned_target);
+            ned_pose_stamp_pub.publish(target_state->ned_pose_stamped);
         }
 
         void step_vrpn()
@@ -165,6 +177,43 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
 
     target_state->target_pose_stamped.header.frame_id = "optitrack";
     target_state->target_pose_stamped.header.stamp = ros::Time::now();
+
+    //NED frame
+
+    target_state->ned_target.transform.translation.x = pos.x();
+    //target_state->target.transform.translation.x = pos.y();
+    target_state->ned_target.transform.translation.y = -pos.y();
+    //target_state->target.transform.translation.y = -pos.x();
+    target_state->ned_target.transform.translation.z = -pos.z();
+
+    target_state->ned_target.transform.rotation.x = q_rot.x();
+    target_state->ned_target.transform.rotation.y = -q_rot.y();
+    target_state->ned_target.transform.rotation.z = -q_rot.z();
+    target_state->ned_target.transform.rotation.w = q_rot.w();
+
+    target_state->ned_target.header.frame_id = "optitrack";
+    target_state->ned_target.child_frame_id = frame_id;
+    target_state->ned_target.header.stamp = ros::Time::now();
+
+
+
+    target_state->ned_pose_stamped.pose.position.x = pos.x();
+    target_state->ned_pose_stamped.pose.position.y = -pos.y();
+    target_state->ned_pose_stamped.pose.position.z = -pos.z();
+
+    target_state->ned_pose_stamped.pose.orientation.x = q_rot.x();
+    target_state->ned_pose_stamped.pose.orientation.y = -q_rot.y();
+    target_state->ned_pose_stamped.pose.orientation.z = -q_rot.z();
+    target_state->ned_pose_stamped.pose.orientation.w = q_rot.w();
+
+    target_state->ned_pose_stamped.header.frame_id = "optitrack";
+    target_state->ned_pose_stamped.header.stamp = ros::Time::now();
+
+
+
+
+
+
 
 //        std::cout<<"marker x"<<pos.x()<<std::endl;
 //        std::cout<<"marker y"<<pos.y()<<std::endl;
