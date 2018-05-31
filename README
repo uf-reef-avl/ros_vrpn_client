@@ -43,6 +43,7 @@ Important notes before running
 Running the code
 ----------------
 
+	geometry_msg/TransformedStamped (/robotrigidbody/ned or nwu/pose)
 
 -To run vrpn from the command line type: roslaunch ros_vrpn_client test.launch name:=robotrigidbody
 	where robotrigidbody is the name of the robot's rigid body set in motive or optitrack.
