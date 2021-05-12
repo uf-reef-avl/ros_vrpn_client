@@ -7,7 +7,7 @@ This installation assumes you have ROS installed and created a catkin workspace 
 
 1. In the command terminal, move to your catkin workspace's src directory (cd catkin_ws/src)
 
-2. Once inside the catkin src directory type: git clone http://10.251.72.180/Pathfinder4/ros_vrpn_client
+2. Once inside the catkin src directory type: git clone {this url repo}
 	and enter in your GitLab credentials when prompted
 
 3. Either move back out of your catkin src directory to use catkin_make or run catkin_build (ignore the warnings)
