@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="vrpn"
 	ProjectGUID="{7EE1DB03-16A5-4465-9164-061BE0C88B8C}"
 	RootNamespace="vrpn"
@@ -43,8 +43,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;../dtrack;quat;../isense;../Dtrack;../libfreespace/include;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include&quot;;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include&quot;;&quot;$(SYSTEMDRIVE)\sdk\cpp&quot;;&quot;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1&quot;"
-				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE,VRPNDLL_NOEXPORTS"
+				AdditionalIncludeDirectories="&quot;$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;../dtrack;quat;../isense;../Dtrack;../libfreespace/include;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include&quot;;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include&quot;;&quot;$(SYSTEMDRIVE)\sdk\cpp&quot;;&quot;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1&quot;;./submodules/hidapi/hidapi;&quot;$(SYSTEMDRIVE)\Program Files\libusb-1.0\libusb&quot;;&quot;$(SYSTEMDRIVE)\Program Files (x86)\Polhemus\PDI\PDI_90\Inc&quot;"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS,VRPNDLL_NOEXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -69,6 +69,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				OutputFile=".\pc_win32/Release\vrpn.lib"
+				AdditionalLibraryDirectories="$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;&quot;$(SYSTEMDRIVE)\Program Files (x86)\Polhemus\PDI\PDI_90\Lib\Win32&quot;"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -117,8 +118,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;../dtrack;quat;../isense;../Dtrack;../libfreespace/include;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include&quot;;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include&quot;;&quot;$(SYSTEMDRIVE)\sdk\cpp&quot;;&quot;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1&quot;"
-				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE,VRPNDLL_NOEXPORTS"
+				AdditionalIncludeDirectories="&quot;$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;../dtrack;quat;../isense;../Dtrack;../libfreespace/include;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\DAQmx ANSI C Dev\include&quot;;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include&quot;;&quot;$(SYSTEMDRIVE)\sdk\cpp&quot;;&quot;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1&quot;;./submodules/hidapi/hidapi;&quot;$(SYSTEMDRIVE)\Program Files\libusb-1.0\libusb&quot;;&quot;$(SYSTEMDRIVE)\Program Files (x86)\Polhemus\PDI\PDI_90\Inc&quot;"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS,VRPNDLL_NOEXPORTS"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\pc_win32/Debug/vrpn.pch"
 				AssemblerListingLocation=".\pc_win32/Debug/"
@@ -142,6 +143,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				OutputFile=".\pc_win32/Debug\vrpn.lib"
+				AdditionalLibraryDirectories="$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;&quot;$(SYSTEMDRIVE)\Program Files (x86)\Polhemus\PDI\PDI_90\Lib\Win32&quot;"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -171,7 +173,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath=".\vrpn_3DConnexion.C"
+				RelativePath="vrpn_3DConnexion.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -198,8 +200,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -208,8 +208,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -222,8 +220,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -232,8 +228,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -246,8 +240,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -256,8 +248,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -270,8 +260,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -280,8 +268,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -294,8 +280,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -304,8 +288,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -318,8 +300,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -328,8 +308,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Analog_5dtUSB.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -342,8 +340,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -352,8 +348,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -366,8 +360,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -376,14 +368,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Analog_USDigital_A2.C"
+				RelativePath="vrpn_Analog_USDigital_A2.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -403,7 +393,27 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Auxiliary_Logger.C"
+				RelativePath="vrpn_Assert.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Auxiliary_Logger.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -430,8 +440,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -440,8 +448,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_BiosciencesTools.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -454,8 +480,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -464,14 +488,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Button_NI_DIO24.C"
+				RelativePath="vrpn_Button_NI_DIO24.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -486,14 +508,29 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalOptions="/TP"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Button_USB.cpp"
+				RelativePath="vrpn_Button_USB.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="vrpn_CerealBox.C"
@@ -503,8 +540,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -513,8 +548,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_CHProducts_Controller_Raw.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -527,8 +580,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -537,8 +588,46 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Contour.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_DevInput.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -551,8 +640,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -561,8 +648,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -575,9 +660,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-						BrowseInformation="2"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -586,14 +668,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_DirectXRumblePad.C"
+				RelativePath="vrpn_DirectXRumblePad.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -613,7 +693,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_dreamcheeky.C"
+				RelativePath="vrpn_DreamCheeky.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -640,8 +720,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -650,14 +728,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Event.C"
+				RelativePath="vrpn_EndpointContainer.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -677,7 +753,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Event_Analog.C"
+				RelativePath="vrpn_Event.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -697,7 +773,27 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Event_Mouse.C"
+				RelativePath="vrpn_Event_Analog.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Event_Mouse.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -724,8 +820,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -734,8 +828,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -748,8 +840,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -758,8 +848,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -772,8 +860,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -782,8 +868,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -796,8 +880,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -806,8 +888,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -820,8 +900,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -830,8 +908,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -844,8 +920,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -854,8 +928,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -868,8 +940,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -878,8 +948,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -892,8 +960,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -902,14 +968,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Freespace.C"
+				RelativePath="vrpn_Freespace.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -936,8 +1000,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -946,8 +1008,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Futaba.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -960,8 +1040,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -970,14 +1048,52 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_HumanInterface.C"
+				RelativePath="vrpn_Griffin.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_HumanInterface.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_IDEA.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1004,8 +1120,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1014,14 +1128,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Imager_Stream_Buffer.C"
+				RelativePath="vrpn_Imager_Stream_Buffer.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1048,8 +1160,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1058,14 +1168,32 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_inertiamouse.C"
+				RelativePath="vrpn_inertiamouse.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_JoyFly.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1092,8 +1220,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1102,8 +1228,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1116,8 +1240,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1126,14 +1248,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Keyboard.C"
+				RelativePath="vrpn_Keyboard.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1160,8 +1280,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1170,8 +1288,86 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Laputa.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Local_HIDAPI.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Logitech_Controller_Raw.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_LUDL.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1184,8 +1380,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1194,8 +1388,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Microsoft_Controller_Raw.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1208,8 +1420,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1218,8 +1428,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1232,8 +1440,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1242,8 +1448,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1256,8 +1460,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1266,8 +1468,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Nidaq.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1280,8 +1500,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1290,8 +1508,66 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_nVidia_shield_controller.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Oculus.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_OmegaTemperature.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1304,8 +1580,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1314,8 +1588,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1328,8 +1600,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1338,8 +1608,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1352,8 +1620,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1362,8 +1628,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1376,8 +1640,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1386,8 +1648,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1400,8 +1660,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1410,8 +1668,46 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Retrolink.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Saitek_Controller_Raw.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1424,8 +1720,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1434,8 +1728,46 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_SerialPort.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_sgibox.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1448,8 +1780,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1458,8 +1788,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1472,8 +1800,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1482,8 +1808,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1496,8 +1820,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1506,8 +1828,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1520,8 +1840,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1530,8 +1848,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Streaming_Arduino.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1544,8 +1880,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1554,8 +1888,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Thread.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1568,8 +1920,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1578,8 +1928,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1592,8 +1940,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1602,8 +1948,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1616,8 +1960,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1626,8 +1968,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1640,8 +1980,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1650,8 +1988,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1664,8 +2000,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1674,8 +2008,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_Colibri.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1688,8 +2040,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1698,8 +2048,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1712,8 +2060,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1722,8 +2068,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1736,8 +2080,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1746,8 +2088,86 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_Filter.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_GameTrak.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_GPS.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_IMU.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1760,8 +2180,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1770,14 +2188,32 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Tracker_Isotrak.C"
+				RelativePath="vrpn_Tracker_Isotrak.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_JsonNet.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1804,8 +2240,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1814,14 +2248,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Tracker_MotionNode.C"
+				RelativePath="vrpn_Tracker_LibertyHS.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1841,7 +2273,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Tracker_NDI_Polaris.C"
+				RelativePath="vrpn_Tracker_MotionNode.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1861,7 +2293,247 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Tracker_PhaseSpace.C"
+				RelativePath="vrpn_Tracker_NDI_Polaris.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_NovintFalcon.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_OSVRHackerDevKit.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_PDI.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_PhaseSpace.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_RazerHydra.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_SpacePoint.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_ThalmicLabsMyo.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_TrivisioColibri.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_ViewPoint.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_WiimoteHead.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_Wintracker.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_zSight.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1888,8 +2560,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1898,8 +2568,26 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_Vality.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1912,8 +2600,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1922,8 +2608,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1936,8 +2620,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -1946,14 +2628,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_WiiMote.C"
+				RelativePath="vrpn_WiiMote.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1973,7 +2653,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_XInputGamepad.C"
+				RelativePath="vrpn_XInputGamepad.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1993,7 +2673,27 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\vrpn_Xkeys.C"
+				RelativePath="vrpn_Xkeys.C"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="vrpn_YEI_3Space.C"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -2020,8 +2720,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -2030,8 +2728,6 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
 						CompileAs="2"
 					/>
 				</FileConfiguration>
@@ -2042,7 +2738,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath=".\vrpn_3DConnexion.h"
+				RelativePath="vrpn_3DConnexion.h"
 				>
 			</File>
 			<File
@@ -2070,6 +2766,10 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Analog_5dtUSB.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_Analog_Output.h"
 				>
 			</File>
@@ -2078,11 +2778,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Analog_USDigital_A2.h"
+				RelativePath="vrpn_Analog_USDigital_A2.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Auxiliary_Logger.h"
+				RelativePath="vrpn_Assert.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Auxiliary_Logger.h"
 				>
 			</File>
 			<File
@@ -2090,19 +2794,27 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_BiosciencesTools.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_Button.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Button_NI_DIO24.h"
+				RelativePath="vrpn_Button_NI_DIO24.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Button_USB.h"
+				RelativePath="vrpn_Button_USB.h"
 				>
 			</File>
 			<File
 				RelativePath="vrpn_CerealBox.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_CHProducts_Controller_Raw.h"
 				>
 			</File>
 			<File
@@ -2114,6 +2826,18 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_ConnectionPtr.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Contour.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_DevInput.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_Dial.h"
 				>
 			</File>
@@ -2122,11 +2846,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_DirectXRumblePad.h"
+				RelativePath="vrpn_DirectXRumblePad.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_dreamcheeky.h"
+				RelativePath="vrpn_DreamCheeky.h"
 				>
 			</File>
 			<File
@@ -2134,15 +2858,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Event.h"
+				RelativePath="vrpn_EndpointContainer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Event_Analog.h"
+				RelativePath="vrpn_Event.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Event_Mouse.h"
+				RelativePath="vrpn_Event_Analog.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Event_Mouse.h"
 				>
 			</File>
 			<File
@@ -2151,6 +2879,10 @@
 			</File>
 			<File
 				RelativePath="vrpn_FileController.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_FixedPoint.h"
 				>
 			</File>
 			<File
@@ -2178,7 +2910,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Freespace.h"
+				RelativePath="vrpn_Freespace.h"
 				>
 			</File>
 			<File
@@ -2186,7 +2918,15 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Futaba.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_GlobalHapticsOrb.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Griffin.h"
 				>
 			</File>
 			<File
@@ -2194,7 +2934,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_HumanInterface.h"
+				RelativePath="vrpn_HumanInterface.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_IDEA.h"
 				>
 			</File>
 			<File
@@ -2202,7 +2946,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Imager_Stream_Buffer.h"
+				RelativePath="vrpn_Imager_Stream_Buffer.h"
 				>
 			</File>
 			<File
@@ -2210,7 +2954,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_inertiamouse.h"
+				RelativePath="vrpn_inertiamouse.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_JoyFly.h"
 				>
 			</File>
 			<File
@@ -2222,7 +2970,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Keyboard.h"
+				RelativePath="vrpn_Keyboard.h"
 				>
 			</File>
 			<File
@@ -2230,7 +2978,39 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Laputa.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Log.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Logitech_Controller_Raw.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_LUDL.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_Magellan.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_MainloopContainer.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_MainloopObject.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_MessageMacros.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Microsoft_Controller_Raw.h"
 				>
 			</File>
 			<File
@@ -2246,7 +3026,31 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Nidaq.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_nikon_controls.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_nVidia_shield_controller.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Oculus.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_OmegaTemperature.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_OneEuroFilter.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_OwningPtr.h"
 				>
 			</File>
 			<File
@@ -2258,7 +3062,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Poser_Tek4662.h"
+				RelativePath="vrpn_Poser_Tek4662.h"
 				>
 			</File>
 			<File
@@ -2270,7 +3074,27 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Retrolink.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Saitek_Controller_Raw.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_SendTextMessageStreamProxy.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_Serial.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_SerialPort.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_sgibox.h"
 				>
 			</File>
 			<File
@@ -2290,7 +3114,15 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Streaming_Arduino.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_Text.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Thread.h"
 				>
 			</File>
 			<File
@@ -2314,6 +3146,10 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Tracker_Colibri.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_Tracker_Crossbow.h"
 				>
 			</File>
@@ -2326,11 +3162,31 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Tracker_Filter.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_GameTrak.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_GPS.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_IMU.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_Tracker_isense.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Tracker_Isotrak.h"
+				RelativePath="vrpn_Tracker_Isotrak.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_JsonNet.h"
 				>
 			</File>
 			<File
@@ -2338,15 +3194,63 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Tracker_MotionNode.h"
+				RelativePath="vrpn_Tracker_LibertyHS.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Tracker_NDI_Polaris.h"
+				RelativePath="vrpn_Tracker_MotionNode.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Tracker_PhaseSpace.h"
+				RelativePath="vrpn_Tracker_NDI_Polaris.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_NovintFalcon.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_OSVRHackerDevKit.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_PDI.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_PhaseSpace.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_RazerHydra.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_SpacePoint.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_ThalmicLabsMyo.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_TrivisioColibri.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_ViewPoint.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_WiimoteHead.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_Wintracker.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Tracker_zSight.h"
 				>
 			</File>
 			<File
@@ -2358,6 +3262,10 @@
 				>
 			</File>
 			<File
+				RelativePath="vrpn_Vality.h"
+				>
+			</File>
+			<File
 				RelativePath="vrpn_VPJoystick.h"
 				>
 			</File>
@@ -2366,15 +3274,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_WiiMote.h"
+				RelativePath="vrpn_WiiMote.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_XInputGamepad.h"
+				RelativePath="vrpn_WindowsH.h"
 				>
 			</File>
 			<File
-				RelativePath=".\vrpn_Xkeys.h"
+				RelativePath="vrpn_XInputGamepad.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_Xkeys.h"
+				>
+			</File>
+			<File
+				RelativePath="vrpn_YEI_3Space.h"
 				>
 			</File>
 			<File

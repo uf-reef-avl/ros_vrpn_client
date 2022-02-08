@@ -33,31 +33,33 @@
 //== and publishes & tf it's position and orientation through ROS.
 
 
-#include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
-#include <geometry_msgs/TransformStamped.h>
+#include "rclcpp/rclcpp.hpp"
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Vector3.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <stdio.h>
 #include <math.h>
 
 #include <vrpn_Connection.h>
 #include <vrpn_Tracker.h>
 
+using namespace std::chrono_literals;
 // Daman
 //#include <LinearMath/btQuaternion.h>
-#include <tf/LinearMath/Quaternion.h>
+//#include <tf/LinearMath/Quaternion.h>
 // /Daman
 
 void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t);
 
 class TargetState{
     public:
-        geometry_msgs::TransformStamped target;
-        geometry_msgs::PoseStamped target_pose_stamped;
-
-        geometry_msgs::TransformStamped ned_target;
-        geometry_msgs::PoseStamped ned_pose_stamped;
+        geometry_msgs::msg::TransformStamped target;
+        geometry_msgs::msg::PoseStamped target_pose_stamped;
+        geometry_msgs::msg::TransformStamped ned_target;
+        geometry_msgs::msg::PoseStamped ned_pose_stamped;
 };
-
 
 TargetState *target_state;
 std::string frame_id;
@@ -67,41 +69,55 @@ bool fresh_data = false;
 vrpn_TRACKERCB prev_vrpn_data;
 
 
-class Rigid_Body {
+class Rigid_Body: public rclcpp::Node {
     private:
-        ros::Publisher target_pub;
-        ros::Publisher pose_stamp_pub;
-        ros::Publisher ned_target_pub;
-        ros::Publisher ned_pose_stamp_pub;
-        tf::TransformBroadcaster br;
+        //initialize publishers
+        rclcpp::Publisher<geometry_msgs::msg::TransformStamped>::SharedPtr target_pub;
+        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_stamp_pub;
+        rclcpp::Publisher<geometry_msgs::msg::TransformStamped>::SharedPtr ned_target_pub;
+        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ned_pose_stamp_pub;
+        // Initialize the transform broadcaster
+        std::unique_ptr<tf2_ros::TransformBroadcaster> br;
         vrpn_Connection *connection;
         vrpn_Tracker_Remote *tracker;
+        rclcpp::TimerBase::SharedPtr timer_;
+        //parameters
 
     public:
-        Rigid_Body(ros::NodeHandle& nh, std::string server_ip,
-                   int port)
+        Rigid_Body(): Node("ros_vrpn_client")
         {
-            target_pub = nh.advertise<geometry_msgs::TransformStamped>("nwu/pose", 100);
-            pose_stamp_pub = nh.advertise<geometry_msgs::PoseStamped>("nwu/pose_stamped",100);
+            this->declare_parameter("vrpn_ip", std::string());
+            this->declare_parameter("port", 3883);
 
-            ned_target_pub = nh.advertise<geometry_msgs::TransformStamped>("ned/pose", 100);
-            ned_pose_stamp_pub = nh.advertise<geometry_msgs::PoseStamped>("ned/pose_stamped",100);
+            br = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+            target_pub = this->create_publisher<geometry_msgs::msg::TransformStamped>("~/nwu/pose", 100);
+            pose_stamp_pub = this->create_publisher<geometry_msgs::msg::PoseStamped>("~/nwu/pose_stamped",100);
 
-            std::string connec_nm = server_ip + ":" + boost::lexical_cast<std::string>(port);
+            ned_target_pub = this->create_publisher<geometry_msgs::msg::TransformStamped>("~/ned/pose", 100);
+            ned_pose_stamp_pub = this->create_publisher<geometry_msgs::msg::PoseStamped>("~/ned/pose_stamped",100);
+
+            std::string connec_nm = this->get_parameter("vrpn_ip").as_string() + ":" + std::to_string(this->get_parameter("port").as_int());
             connection = vrpn_get_connection_by_name(connec_nm.c_str());
-            std::string target_name = nh.getNamespace().substr(1);
+            std::string target_name = this->get_name();
+            RCLCPP_WARN_STREAM(this->get_logger(),"Connection informations: " << connec_nm);
+            RCLCPP_WARN_STREAM(this->get_logger(),"Rigid body name: " << target_name);
             tracker = new vrpn_Tracker_Remote(target_name.c_str(), connection);
             this->tracker->register_change_handler(NULL, track_target);
-        }
+            // Todo: tune mocap frequency
+            timer_ = this->create_wall_timer(5ms, std::bind(&Rigid_Body::main_loop, this));
+            }
 
         void publish_target_state(TargetState *target_state)
         {
-            br.sendTransform(target_state->target);
-            target_pub.publish(target_state->target);
-            pose_stamp_pub.publish(target_state->target_pose_stamped);
-
-            ned_target_pub.publish(target_state->ned_target);
-            ned_pose_stamp_pub.publish(target_state->ned_pose_stamped);
+            target_state->target.header.stamp= this->now();
+            target_state->target_pose_stamped.header.stamp= this->now();
+            target_state->ned_target.header.stamp= this->now();
+            target_state->ned_pose_stamped.header.stamp= this->now();
+            br->sendTransform(target_state->target);
+            target_pub->publish(target_state->target);
+            pose_stamp_pub->publish(target_state->target_pose_stamped);
+            ned_target_pub->publish(target_state->ned_target);
+            ned_pose_stamp_pub->publish(target_state->ned_pose_stamped);
         }
 
         void step_vrpn()
@@ -109,33 +125,43 @@ class Rigid_Body {
             this->tracker->mainloop();
             this->connection->mainloop();
         }
+
+        void main_loop() {
+            step_vrpn();
+            if (fresh_data == true)
+            { // only publish when receive data over VRPN.
+                publish_target_state(target_state);
+                fresh_data = false;
+            }
+        }
+
 };
 
 //== Tracker Position/Orientation Callback ==--
 void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
 {
     // Daman
-	//btQuaternion q_orig(t.quat[0], t.quat[1], t.quat[2], t.quat[3]);
-	tf::Quaternion q_orig(t.quat[0], t.quat[1], t.quat[2], t.quat[3]);
+    //btQuaternion q_orig(t.quat[0], t.quat[1], t.quat[2], t.quat[3]);
+    tf2::Quaternion q_orig(t.quat[0], t.quat[1], t.quat[2], t.quat[3]);
     //btQuaternion q_fix(0.70710678, 0., 0., 0.70710678);
-	tf::Quaternion q_fix(0.70710678, 0., 0., 0.70710678);
-	// /Daman
+    tf2::Quaternion q_fix(0.70710678, 0., 0., 0.70710678);
+    // /Daman
 
     // optitrak <-- funky <-- object
     // the q_fix.inverse() esures that when optitrak_funky says 0 0 0
     // for roll pitch yaw, there is still a rotation that aligns the
     // object frame with the /optitrak frame (and not /optitrak_funky)
     // Daman
-	//btQuaternion q_rot = q_fix * q_orig * q_fix.inverse();
-	tf::Quaternion q_rot = q_fix * q_orig * q_fix.inverse();
-	// /Daman
+    //btQuaternion q_rot = q_fix * q_orig * q_fix.inverse();
+    tf2::Quaternion q_rot = q_fix * q_orig * q_fix.inverse();
+    // /Daman
 
     //btScalar ang = q_rot.getAngle();
     // Daman
-	//btVector3 axis = q_rot.getAxis();
-	tf::Vector3 axis = q_rot.getAxis();
+    //btVector3 axis = q_rot.getAxis();
+//    tf2::Vector3 axis = q_rot.getAxis();
     //btVector3 pos(t.pos[0], -t.pos[2], t.pos[1]);
-	tf::Vector3 pos(t.pos[0], -t.pos[2], t.pos[1]);
+    tf2::Vector3 pos(t.pos[0], -t.pos[2], t.pos[1]);
     //btVector3 new_pos = pos.rotate(axis, ang);
 
     // verifying that each callback indeed gives fresh data.
@@ -146,7 +172,7 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
          prev_vrpn_data.pos[0] == t.pos[0] and \
          prev_vrpn_data.pos[1] == t.pos[1] and \
          prev_vrpn_data.pos[2] == t.pos[2] )
-        ROS_WARN("Repeated Values");
+        std::cout <<"Repeated Values";
 
     prev_vrpn_data = t;
 
@@ -163,7 +189,7 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
 
     target_state->target.header.frame_id = "optitrack";
     target_state->target.child_frame_id = frame_id;
-    target_state->target.header.stamp = ros::Time::now();
+//    target_state->target.header.stamp = this->now();
 
 
     target_state->target_pose_stamped.pose.position.x = pos.x();
@@ -176,7 +202,7 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
     target_state->target_pose_stamped.pose.orientation.w = q_rot.w();
 
     target_state->target_pose_stamped.header.frame_id = "optitrack";
-    target_state->target_pose_stamped.header.stamp = ros::Time::now();
+//    target_state->target_pose_stamped.header.stamp = this->now();
 
     //NED frame
 
@@ -193,7 +219,7 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
 
     target_state->ned_target.header.frame_id = "optitrack";
     target_state->ned_target.child_frame_id = frame_id;
-    target_state->ned_target.header.stamp = ros::Time::now();
+//    target_state->ned_target.header.stamp = this->now();
 
 
 
@@ -207,12 +233,7 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
     target_state->ned_pose_stamped.pose.orientation.w = q_rot.w();
 
     target_state->ned_pose_stamped.header.frame_id = "optitrack";
-    target_state->ned_pose_stamped.header.stamp = ros::Time::now();
-
-
-
-
-
+//    target_state->ned_pose_stamped.header.stamp = this->now();
 
 
 //        std::cout<<"marker x"<<pos.x()<<std::endl;
@@ -223,41 +244,40 @@ void VRPN_CALLBACK track_target (void *, const vrpn_TRACKERCB t)
 }
 
 
-
 int main(int argc, char* argv[])
 {
-    ros::init(argc, argv, "vrpn_tracked_object_1");
-    ros::NodeHandle nh("~");
 
     target_state = new TargetState;
-    //frame_id = nh.getNamespace().substr(1);
-    frame_id = nh.getNamespace();
 
-    std::string vrpn_server_ip;
-    int vrpn_port;
-    std::string tracked_object_name;
+//    std::string vrpn_server_ip;
+//    int vrpn_port;
+//    std::string tracked_object_name;
+//
+//    nh.param<std::string>("vrpn_server_ip", vrpn_server_ip, std::string());
+//    nh.param<int>("vrpn_port", vrpn_port, 3883);
+//
+//    std::cout<<"vrpn_server_ip:"<<vrpn_server_ip<<std::endl;
+//    std::cout<<"vrpn_port:"<<vrpn_port<<std::endl;
+//
+//    Rigid_Body tool(nh, vrpn_server_ip, vrpn_port);
 
-    nh.param<std::string>("vrpn_server_ip", vrpn_server_ip, std::string());
-    nh.param<int>("vrpn_port", vrpn_port, 3883);
-
-    std::cout<<"vrpn_server_ip:"<<vrpn_server_ip<<std::endl;
-    std::cout<<"vrpn_port:"<<vrpn_port<<std::endl;
-
-    Rigid_Body tool(nh, vrpn_server_ip, vrpn_port);
-
-    ros::Rate loop_rate(1000);
-
-    while(ros::ok())
-    {
-        tool.step_vrpn();
-        //vrpn_SleepMsecs(10);
-        if (fresh_data == true)
-        { // only publish when receive data over VRPN.
-            tool.publish_target_state(target_state);
-            fresh_data = false;
-        }
-        //ros::spinOnce();
-        loop_rate.sleep();
-    }
-	return 0;
+//    ros::Rate loop_rate(1000);
+//
+//    while(ros::ok())
+//    {
+//        tool.step_vrpn();
+//        //vrpn_SleepMsecs(10);
+//        if (fresh_data == true)
+//        { // only publish when receive data over VRPN.
+//            tool.publish_target_state(target_state);
+//            fresh_data = false;
+//        }
+//        //ros::spinOnce();
+//        loop_rate.sleep();
+//    }
+//	return 0;
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<Rigid_Body>());
+    rclcpp::shutdown();
+    return 0;
 }

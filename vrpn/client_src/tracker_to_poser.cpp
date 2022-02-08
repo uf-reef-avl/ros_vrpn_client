@@ -1,10 +1,11 @@
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdio.h>                      // for fprintf, stderr, printf, etc
+#include <stdlib.h>                     // for atoi, exit
+#include <string.h>                     // for strcmp
+#include <vrpn_Shared.h>                // for vrpn_gettimeofday, vrpn_SleepMsecs, timeval
 
-#include "vrpn_Tracker.h"
-#include "vrpn_Poser.h"
+#include "vrpn_Configure.h"             // for VRPN_CALLBACK
+#include "vrpn_Poser.h"                 // for vrpn_Poser_Remote
+#include "vrpn_Tracker.h"               // for vrpn_TRACKERCB, etc
 
 static	bool  g_verbose = false;
 
@@ -39,14 +40,16 @@ void	VRPN_CALLBACK handle_tracker_update(void *userdata, const vrpn_TRACKERCB t)
 
   // Get the data from the tracker and send it to the poser.
   struct timeval now;
-  gettimeofday(&now, NULL);
+  vrpn_gettimeofday(&now, NULL);
   psr->request_pose(now, t.pos, t.quat);
 }
 
 int main (int argc, char * argv[])
 {
-  char 	*tracker_client_name = "Tracker0@localhost";
-  char 	*poser_client_name = "Poser0@localhost";
+  char default_tracker[] = "Tracker0@localhost";
+  char default_poser[] = "Poser0@localhost";
+  char 	*tracker_client_name = default_tracker;
+  char 	*poser_client_name = default_poser;
   int	realparams = 0;
   int	i;
 

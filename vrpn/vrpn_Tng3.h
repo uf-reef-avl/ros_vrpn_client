@@ -1,6 +1,11 @@
 #ifndef VRPN_TNG3B_H
-#include "vrpn_Analog.h"
-#include "vrpn_Button.h"
+#define VRPN_TNG3B_H
+#include "vrpn_Analog.h"                // for vrpn_Serial_Analog
+#include "vrpn_Button.h"                // for vrpn_Button_Filter
+#include "vrpn_Configure.h"             // for VRPN_API
+#include "vrpn_Connection.h"            // for vrpn_CONNECTION_LOW_LATENCY, etc
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Types.h"                 // for vrpn_uint32
 
 // TNG stands for "Totally Neat Gadget."
 // The TNG3 is an interface device from Mindtel <www.mindtel.com>.
@@ -9,7 +14,7 @@
 // Written by Rob King at Navy Research Labs.
 
 class VRPN_API vrpn_Tng3: public vrpn_Serial_Analog,
-			 public vrpn_Button
+			 public vrpn_Button_Filter
 {
  public:
     vrpn_Tng3 (const char * name, 
@@ -30,9 +35,10 @@ class VRPN_API vrpn_Tng3: public vrpn_Serial_Analog,
     int _numbuttons;	// How many buttons to open
     int _numchannels;	// How many analog channels to open
 
-    int _expected_chars;	// How many characters to expect in the report
+    unsigned _num_read;		// How many characters have been read on this report?
+    unsigned _expected_chars;	// How many characters to expect in the report
     unsigned char _buffer[512];	// Buffer of characters in report
-    int _bufcount;		// How many characters we have so far
+    unsigned _bufcount;		// How many characters we have so far
 
     struct timeval _timestamp;	// Time of the last report from the device
 
@@ -56,5 +62,4 @@ class VRPN_API vrpn_Tng3: public vrpn_Serial_Analog,
     unsigned char bDataPacketStart;
 };
 
-#define VRPN_TNG3B_H
 #endif

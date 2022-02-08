@@ -1,8 +1,11 @@
 #ifndef VRPN_RADAMEC_SPI_H
 #define VRPN_RADAMEC_SPI_H
 
-#include "vrpn_Connection.h"
-#include "vrpn_Analog.h"
+#include "vrpn_Analog.h"                // for vrpn_Serial_Analog
+#include "vrpn_Configure.h"             // for VRPN_API
+#include "vrpn_Connection.h"            // for vrpn_CONNECTION_LOW_LATENCY, etc
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Types.h"                 // for vrpn_uint32, vrpn_int32
 
 class VRPN_API vrpn_Radamec_SPI: public vrpn_Serial_Analog
 {
@@ -20,9 +23,9 @@ public:
 	int _camera_id;		    //< What is our camera ID, queried from device
 	int _numchannels;	    //< How many analog channels to open
 
-	int _expected_chars;	    //< How many characters to expect in the report
+	unsigned _expected_chars;	    //< How many characters to expect in the report
 	unsigned char _buffer[512]; //< Buffer of characters in report
-	int _bufcount;		    //< How many characters we have so far
+	unsigned _bufcount;		    //< How many characters we have so far
 
 	struct timeval timestamp;   //< Time of the last report from the device
 

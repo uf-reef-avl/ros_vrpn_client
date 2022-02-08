@@ -1,13 +1,14 @@
-#include <math.h>
+
 #include "vrpn_Joywin32.h"
 
 #if defined(_WIN32)
 
 #pragma comment(lib,"winmm.lib")
-
+#include "vrpn_Shared.h"
 #include <windows.h>
 #include <stdio.h>
-
+#include <cmath>
+#include <algorithm>
 // vrpn_Joywin32.C
 //	This is a driver for joysticks being used through the
 // Win32 basic interface.
@@ -23,28 +24,25 @@ const int CENTERED_VALUE  = -1;	  // returned value for centered POV
 
 #define MAX_TIME_INTERVAL       (2000000) // max time to try and reacquire
 
-static	unsigned long	duration(struct timeval t1, struct timeval t2)
-{
-	return (t1.tv_usec - t2.tv_usec) +
-	       1000000L * (t1.tv_sec - t2.tv_sec);
-}
-
 vrpn_Joywin32::vrpn_Joywin32 (const char * name, vrpn_Connection * c, vrpn_uint8 joyNumber, vrpn_float64 readRate, vrpn_uint8 mode, vrpn_int32 deadzone) :
 		vrpn_Analog(name, c),
-		vrpn_Button(name, c),
+		vrpn_Button_Filter(name, c),
 		_read_rate(readRate),
 		_joyNumber(joyNumber),
-		_numchannels(min(12,vrpn_CHANNEL_MAX)),		   // Maximum available
-		_numbuttons(min(128,vrpn_BUTTON_MAX_BUTTONS)),     // Maximum available
+		_numchannels((std::min)(12,vrpn_CHANNEL_MAX)),		   // Maximum available
+		_numbuttons((std::min)(128,vrpn_BUTTON_MAX_BUTTONS)),     // Maximum available
 		_mode(mode)
 {
+	last_error_report.tv_sec = 0;
+	last_error_report.tv_usec = 0;
+
 	if (deadzone >100 || deadzone<0) {
 		fprintf(stderr,"invalid deadzone, (should be a percentage between 0 and 100).\n");
 		_status = STATUS_BROKEN;
         return;
 	}
 
-	if (_mode <0 || _mode >2) {
+	if (_mode >2) {
 		fprintf(stderr,"invalid mode, should be 0 (raw), 1 (normalized to 0,1) or 2 (normalized to -1,1).\n");
 		_status = STATUS_BROKEN;
         return;
@@ -64,7 +62,13 @@ vrpn_Joywin32::vrpn_Joywin32 (const char * name, vrpn_Connection * c, vrpn_uint8
 
 	_deadzone = deadzone / 100.0;
 
-	DWORD dwResult = 0;
+	// initialize the joystick
+    init_joystick();
+}
+
+void vrpn_Joywin32::init_joystick(void)
+{
+    DWORD dwResult = 0;
 
 	// This function below return the number of joysticks the driver supports.
 	// If it returns 0 then there is no joystick driver installed.
@@ -139,7 +143,6 @@ vrpn_Joywin32::vrpn_Joywin32 (const char * name, vrpn_Connection * c, vrpn_uint8
 	// Set the mode to reading.  Set time to zero, so we'll try to read
 	_status = STATUS_READING;
 	vrpn_gettimeofday(&_timestamp, NULL);
-
 }
 
 void	vrpn_Joywin32::clear_values(void)
@@ -164,12 +167,12 @@ int vrpn_Joywin32::get_report(void)
 	// If it is not time for the next read, just return
 	struct timeval reporttime;
 	vrpn_gettimeofday(&reporttime, NULL);
-	if (duration(reporttime, _timestamp) < 1000000.0 / _read_rate) {
+	if (vrpn_TimevalDuration(reporttime, _timestamp) < 1000000.0 / _read_rate) {
 		return 0;
 	}
 #ifdef	VERBOSE
 	printf(" now: %ld:%ld,   last %ld:%ld\n", reporttime.tv_sec, reporttime.tv_usec,
-		_timestamp.tv_sec, _timestamp.tv_usec);
+		_timestamp.tv_sec, static_cast<long>(_timestamp.tv_usec));
 	printf(" win32 joystick: Getting report\n");
 #endif
 
@@ -321,7 +324,7 @@ int vrpn_Joywin32::get_report(void)
 	}
 
 	// update vrpn_Buttons state
-	for (vrpn_uint32 i=0;i<min(_jc.wMaxButtons, _numbuttons);i++) {
+	for (vrpn_uint32 i=0;i<(std::min)(_jc.wMaxButtons, _numbuttons);i++) {
 		// get flag for current button with a single bit mask and move it left to get 0x1 or 0x0 value
 		buttons[i] = (char) ((jie.dwButtons&(1<<(i)))>>(i));
 	}
@@ -362,12 +365,13 @@ void	vrpn_Joywin32::mainloop()
   switch(_status) {
     case STATUS_BROKEN:
 	{
-	  static  struct  timeval last_report = {0,0};
 	  struct  timeval now;
 	  vrpn_gettimeofday(&now, NULL);
-	  if (duration(now, last_report) > MAX_TIME_INTERVAL) {
-	    send_text_message("Cannot talk to joystick", now, vrpn_TEXT_ERROR);
-	    last_report = now;
+	  if (vrpn_TimevalDuration(now, last_error_report) > MAX_TIME_INTERVAL) {
+	    send_text_message("Cannot talk to joystick, trying resetting it", now, vrpn_TEXT_ERROR);
+	    last_error_report = now;
+
+        init_joystick();
 	  }
 	}
 	break;

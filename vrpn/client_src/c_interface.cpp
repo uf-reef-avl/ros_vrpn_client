@@ -7,10 +7,12 @@
  * a C interface.
  */
 
-#include <vrpn_Tracker.h>
-#include <vrpn_Button.h>
+#include <stddef.h>                     // for NULL
+#include <vrpn_Button.h>                // for vrpn_Button_Remote, etc
+#include <vrpn_Tracker.h>               // for vrpn_TRACKERCB, etc
 
 #include "c_interface.h"
+#include "vrpn_Configure.h"             // for VRPN_CALLBACK
 
 /* Helper function that receives the callback handler from the C++ Tracker
  * remote, repackages the values, and calls the user callback function. */
@@ -25,18 +27,20 @@ void	VRPN_CALLBACK handle_tracker_pos_quat (void *userdata, const vrpn_TRACKERCB
  * pointer needs to be passed to the poll and close functions. */
 extern "C" void *vrpn_c_open_tracker(const char *device_name, vrpn_c_tracker_callback_function callback)
 {
-	vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(device_name);
-	if (tkr != NULL) {
-		/* Tell the callback handler what function to call. */
-		tkr->register_change_handler((void*)callback, handle_tracker_pos_quat);
-	}
-	return tkr;
+  vrpn_Tracker_Remote *tkr = NULL;
+  try {
+    tkr = new vrpn_Tracker_Remote(device_name);
+    /* Tell the callback handler what function to call. */
+    tkr->register_change_handler((void*)callback, handle_tracker_pos_quat);
+  }
+  catch (...) { }
+  return tkr;
 };
 
 /* Poll the tracker whose device pointer is passed in.  This will cause the
  * callback handler to be called whenever a new value comes in for
  * a sensor.  Returns false if the device is not working. */
-extern "C" bool vrpn_c_poll_tracker(void *device)
+extern "C" vrpn_c_bool vrpn_c_poll_tracker(void *device)
 {
 	if (device == NULL) { return false; }
 	vrpn_Tracker_Remote *tkr = (vrpn_Tracker_Remote *)device;
@@ -48,12 +52,16 @@ extern "C" bool vrpn_c_poll_tracker(void *device)
 
 /* Close the tracker whose device pointer is passed in.  Returns true on success,
  * false on failure. */
-extern "C" bool vrpn_c_close_tracker(void *device)
+extern "C" vrpn_c_bool vrpn_c_close_tracker(void *device)
 {
 	if (device == NULL) { return false; }
 	vrpn_Tracker_Remote *tkr = (vrpn_Tracker_Remote *)device;
 
-	delete tkr;
+        try {
+          delete tkr;
+        } catch (...) {
+          return false;
+        }
 	return true;
 };
 
@@ -71,18 +79,19 @@ void	VRPN_CALLBACK handle_button_event (void *userdata, const vrpn_BUTTONCB b)
  * device pointer needs to be passed to the read and close functions. */
 extern "C" void *vrpn_c_open_button(const char *device_name, vrpn_c_button_callback_function callback)
 {
-	vrpn_Button_Remote *btn = new vrpn_Button_Remote(device_name);
-	if (btn != NULL) {
-		/* Tell the callback handler what function to call. */
-		btn->register_change_handler((void*)callback, handle_button_event);
-	}
-	return btn;
+  vrpn_Button_Remote *btn = NULL;
+  try {
+    vrpn_Button_Remote *btn = new vrpn_Button_Remote(device_name);
+    /* Tell the callback handler what function to call. */
+    btn->register_change_handler((void*)callback, handle_button_event);
+  } catch (...) {}
+  return btn;
 };
 
 /* Poll the button whose device pointer is passed in.  This will cause the
  * callback handler to be called whenever a new value comes in for
  * a button.  Returns false if the device is not working. */
-extern "C" bool vrpn_c_poll_button(void *device)
+extern "C" vrpn_c_bool vrpn_c_poll_button(void *device)
 {
 	if (device == NULL) { return false; }
 	vrpn_Button_Remote *btn = (vrpn_Button_Remote *)device;
@@ -93,12 +102,17 @@ extern "C" bool vrpn_c_poll_button(void *device)
 
 /* Close the button whose device pointer is passed in.  Returns true on success,
  * false on failure. */
-extern "C" bool vrpn_c_close_button(void *device)
+extern "C" vrpn_c_bool vrpn_c_close_button(void *device)
 {
 	if (device == NULL) { return false; }
 	vrpn_Button_Remote *btn = (vrpn_Button_Remote *)device;
 
-	delete btn;
+        try {
+          delete btn;
+        }
+        catch (...) {
+          return false;
+        }
 	return true;
 };
 

@@ -109,12 +109,6 @@ void VRPN_CALLBACK handle_analog_change( void* userdata, const vrpn_ANALOGCB inf
     return;
   }
 
-  // fill in the array
-  if( info.channel == NULL )
-  {
-    printf( "Error:  vrpn AnalogRemote native library:  we were handed a bad update from vrpn.\n" );
-    return;
-  }
   env->SetDoubleArrayRegion( jchannels, 0, info.num_channel, (double*) info.channel );
 
 
@@ -131,7 +125,7 @@ Java_vrpn_AnalogRemote_shutdownAnalog( JNIEnv* env, jobject jobj )
   vrpn_Analog_Remote* a = (vrpn_Analog_Remote*) env->GetLongField( jobj, jfid_vrpn_VRPNDevice_native_device );
 
   // unregister a handler and destroy the analogs
-  if( a > 0 )
+  if( a )
   {
     a->unregister_change_handler( jobj, handle_analog_change );
 	a->connectionPtr()->removeReference(); // because we called vrpn_get_connection_by_name
@@ -153,7 +147,7 @@ Java_vrpn_AnalogRemote_mainloop( JNIEnv *env, jobject jobj )
 
   vrpn_Analog_Remote* a = (vrpn_Analog_Remote*) env->GetLongField( jobj, jfid_vrpn_VRPNDevice_native_device );
 
-  if( a > 0 )  // this analog is still alive
+  if( a )  // this analog is still alive
     a->mainloop( );
 }
 
@@ -201,7 +195,7 @@ JNIEXPORT jint JNICALL Java_vrpn_AnalogRemote_getNumActiveChannels( JNIEnv* env,
 {
   // get the analog pointer
   vrpn_Analog_Remote* a = (vrpn_Analog_Remote*) env->GetLongField( jobj, jfid_vrpn_VRPNDevice_native_device );
-  if( a <= 0 )  // this analog is uninitialized or has been shut down already
+  if( a == NULL )  // this analog is uninitialized or has been shut down already
   {
     printf( "Error in native method \"getNumActiveChannels\":  the analog is "
             "uninitialized or has been shut down.\n" );

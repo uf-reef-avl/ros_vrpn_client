@@ -5,8 +5,16 @@
 #ifndef VRPN_NATIONALINSTRUMENTS_H
 #define VRPN_NATIONALINSTRUMENTS_H
 
-#include "vrpn_Analog.h"
-#include "vrpn_Analog_Output.h"
+#ifdef	VRPN_USE_NATIONAL_INSTRUMENTS_MX
+#include <NIDAQmx.h>
+#endif
+
+#include "vrpn_Analog.h"                // for vrpn_CHANNEL_MAX, etc
+#include "vrpn_Analog_Output.h"         // for vrpn_Analog_Output
+#include "vrpn_Configure.h"             // for VRPN_CALLBACK, VRPN_API
+#include "vrpn_Connection.h"
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Types.h"                 // for vrpn_int32, vrpn_uint32, etc
 
 #define vrpn_NI_INPUT_MODE_DIFFERENTIAL (0)
 #define vrpn_NI_INPUT_MODE_REF_SINGLE_ENDED (1)
@@ -34,12 +42,20 @@ public:
 			     bool outBipolar = false,      // Output parameters (D/A)
 			     double minOutVoltage = 0.0,
 			     double maxOutVoltage = 10.0);
-    virtual ~vrpn_National_Instruments_Server(void);
+    virtual ~vrpn_National_Instruments_Server();
 
     virtual void mainloop();
 
 protected:
+  //  Addresses of the devices
+#ifdef VRPN_USE_NATIONAL_INSTRUMENTS_MX
+    TaskHandle    d_analog_task_handle;
+    TaskHandle    d_analog_out_task_handle;
+	bool setValues();	// Transfer our internal values to the D/A
+    void reportError(int32 errnumber, vrpn_bool exitProgram = vrpn_false);
+#else
     short   d_device_number;	      //< National Instruments device to use
+#endif
     short   d_in_polarity;	      //< Polarity (1 = unipolar, 0 = bipolar)
     int     d_in_gain;                //< Input gain
     double  d_in_min_delay;           //< Minimum delay between two readings
@@ -81,7 +97,8 @@ protected:
 };
 
 // An Analog output server that uses National Instruments cards to do its
-// output.
+// output.  It is superceded by vrpn_National_Instruments_Server, and is
+// now deprecated.  It only works with the NIDAQ traditional.
 
 class VRPN_API vrpn_Analog_Output_Server_NI : public vrpn_Analog_Output {
 public:

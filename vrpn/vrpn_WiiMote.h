@@ -6,13 +6,15 @@
 #ifndef VRPN_WIIMOTE_H
 #define VRPN_WIIMOTE_H
 
-#include "vrpn_Configure.h"
+#include "vrpn_Configure.h"   // IWYU pragma: keep
+
 #if defined(VRPN_USE_WIIUSE)
 
-#include "vrpn_Connection.h"
 #include "vrpn_Analog.h"
-#include "vrpn_Button.h"
 #include "vrpn_Analog_Output.h"
+#include "vrpn_Button.h"
+#include "vrpn_Connection.h"
+#include "vrpn_Shared.h"
 
 // maximum number of wiimotes connected to the system
 #define VRPN_WIIUSE_MAX_WIIMOTES 4
@@ -21,10 +23,33 @@
 // This is defined in vrpn_WiiMote.C.
 class vrpn_Wiimote_Device;
 struct wiimote_t;
+#ifdef vrpn_THREADS_AVAILABLE
+struct vrpn_WiiMote_SharedData;
+#endif
 
 // The buttons are as read from the bit-fields of the primary controller (bits 0-15)
 //  and then a second set for any extended controller (nunchuck bits 16-31),
 //  (classic controller bits 32-47), (guitar hero 3 bits 48-63).
+//
+// If you enable "reorderButtons" by setting it to 1, the buttons on the Wiimote
+// itself are re-ordered to be reported as follows:
+//    button[0] = Home
+//    button[1] = "1"
+//    button[2] = "2"
+//    button[3] = "A"
+//    button[4] = "B"
+//    button[5] = "-"
+//    button[6] = "+"
+//    button[7] = direction pad: left
+//    button[8] = direction pad: right
+//    button[9] = direction pad: down
+//    button[10] = direction pad: up
+//    button[11] = WIIMOTE_BUTTON_ZACCEL_BIT4
+//    button[12] = WIIMOTE_BUTTON_ZACCEL_BIT5
+//    button[13] = WIIMOTE_BUTTON_ZACCEL_BIT6
+//    button[14] = WIIMOTE_BUTTON_ZACCEL_BIT7
+//    button[15] = WIIMOTE_BUTTON_UNKNOWN
+//
 // The Analogs are in an even more random order, both from the primary controller:
 //    channel[0] = battery level (0-1)
 //    channel[1] = gravity X vector calculation (1 = Earth gravity)
@@ -43,11 +68,14 @@ struct wiimote_t;
 //    channel[14] = Y of fourth sensor spot (0-767, -1 if not seen)
 //    channel[15] = size of fourth sensor spot (0-15, -1 if not seen)
 // and on the secondary controllers (skipping values to leave room for expansion)
+// (with the joystick x and y values only available with WiiUse 0.14.2 or newer)
 //    channel[16] = nunchuck gravity X vector
 //    channel[17] = nunchuck gravity Y vector
 //    channel[18] = nunchuck gravity Z vector
 //    channel[19] = nunchuck joystick angle
 //    channel[20] = nunchuck joystick magnitude
+//    channel[21] = nunchuck joystick X
+//    channel[22] = nunchuck joystick Y
 //
 //    channel[32] = classic L button
 //    channel[33] = classic R button
@@ -55,15 +83,33 @@ struct wiimote_t;
 //    channel[35] = classic L joystick magnitude
 //    channel[36] = classic R joystick angle
 //    channel[37] = classic R joystick magnitude
+//    channel[38] = classic L joystick X
+//    channel[39] = classic L joystick Y
+//    channel[40] = classic R joystick X
+//    channel[41] = classic R joystick Y
 //
 //    channel[48] = guitar hero whammy bar
 //    channel[49] = guitar hero joystick angle
 //    channel[50] = guitar hero joystick magnitude
-// The Analog_Output is a hack to enable control over the rumble, inherited from
+//    channel[51] = guitar hero joystick X
+//    channel[52] = guitar hero joystick Y
+//
+// Balance board data: (requires WiiUse 0.13 or newer, preferably 0.14 or newer)
+//    channel[64] = Balance board: top-left sensor, kg
+//    channel[65] = Balance board: top-right sensor, kg
+//    channel[66] = Balance board: bottom-left sensor, kg
+//    channel[67] = Balance board: bottom-right sensor, kg
+//    channel[68] = Balance board: total mass, kg
+//    channel[69] = Balance board: center of gravity x, in [-1, 1]
+//    channel[70] = Balance board: center of gravity y, in [-1, 1]
+//
+// The Analog_Output 0 is a hack to enable control over the rumble, inherited from
 //  the RumblePack driver.  This should eventually move to a binary output of
 //  some kind (and so should the lights).  For now, if you set output 0 to a
 //  value greater than or equal to 0.5, it will turn on the rumble; if less, then
 //  it will disable it.
+// Channel 1 sets the IR sensitivity: accepts 1, 2, 3, 4, 5 (clipping to this
+// range if given other values), same as the Wii system's sensitivity settings.
 
 // XXX It would be great to use the IR and accelerometer data along with
 //      a description of the size of the official Wii sensor bar to compute
@@ -78,60 +124,86 @@ struct wiimote_t;
 // XXX It would be great to have a vrpn_Sound device that could play through
 //      the speaker on the WiiMote.
 
-class VRPN_API vrpn_WiiMote: public vrpn_Analog, public vrpn_Button, public vrpn_Analog_Output {
-public:
-        // If there is more than one WiiMote on the machine, the zero-indexed 'which'
-        // parameter tells which one we want to open.
-	vrpn_WiiMote(const char *name, vrpn_Connection *c = NULL, unsigned which = 0
-		, unsigned useMS = 0, unsigned useIR = 0, unsigned reorderButtons = 0);
-	~vrpn_WiiMote();
+class VRPN_API vrpn_WiiMote: public vrpn_Analog, public vrpn_Button_Filter, public vrpn_Analog_Output {
+	public:
+		// If there is more than one WiiMote on the machine, the zero-indexed 'which'
+		// parameter tells which one we want to open.
+		vrpn_WiiMote(const char *name, vrpn_Connection *c = NULL, unsigned which = 0
+		             , unsigned useMS = 1, unsigned useIR = 1, unsigned reorderButtons = 0,
+		             const char *bdaddr = NULL);
+		~vrpn_WiiMote();
 
-	virtual void mainloop();
+		virtual void mainloop();
 
-	bool isValid() const;
+		bool isValid() const;
 
-protected:
-	// Handle the rumble-magnitude setting (channel 0).
-	static int VRPN_CALLBACK handle_request_message( void *userdata,
-		vrpn_HANDLERPARAM p );
-	static int VRPN_CALLBACK handle_request_channels_message( void* userdata,
-		vrpn_HANDLERPARAM p);
-	static int VRPN_CALLBACK handle_last_connection_dropped(void *selfPtr, vrpn_HANDLERPARAM data);
+	protected:
+		// Handle the rumble-magnitude setting (channel 0).
+		static int VRPN_CALLBACK handle_request_message(void *userdata,
+		        vrpn_HANDLERPARAM p);
+		static int VRPN_CALLBACK handle_request_channels_message(void* userdata,
+		        vrpn_HANDLERPARAM p);
+		static int VRPN_CALLBACK handle_last_connection_dropped(void *selfPtr, vrpn_HANDLERPARAM data);
 
-private:
-        // The WiiMote to use
-        vrpn_Wiimote_Device  *wiimote;
-		// a list of available wiimotes
+	private:
+		/// @name Message lock functions
+		/// Used to reduce the amount of in-line ifdefs: these are no-ops
+		/// if threading support isn't available
+		/// @{
+		void acquireMessageLock();
+		void releaseMessageLock();
+		/// @}
+#ifdef vrpn_THREADS_AVAILABLE
+		/// function to (re)connect to wiimote in background:
+		static void connectThreadFunc(vrpn_ThreadData &threadData);
+		/// mainloop is waiting for the connectThread to reestablish the connection:
+		bool waitingForConnection;
+		/// the struct holding the shared data pointer and the mutex:
+		vrpn_WiiMote_SharedData *sharedData;
+		/// thread for asynchronous reconnection function:
+		vrpn_Thread *connectThread;
+#else
+		struct timeval last_reconnect_attempt
+#endif
+		/// The WiiMote to use
+		vrpn_Wiimote_Device  *wiimote;
+		/// a list of available wiimotes
 		wiimote_t **available_wiimotes;
 
-	// Error-handling procedure (spit out a message and die)
-	inline void FAIL(const char *msg) { 
-		struct timeval now; 
-		vrpn_gettimeofday(&now, NULL); 
-		send_text_message(msg, now, vrpn_TEXT_ERROR);
-		d_connection = NULL;
-	}
-	
-	// send report iff changed
-        void report_changes (vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
-        // send report whether or not changed
-        void report (vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
-        // NOTE:  class_of_service is only applied to vrpn_Analog
-        //  values, not vrpn_Button
+		/// Error-handling procedure (spit out a message and die)
+		inline void FAIL(const char *msg) {
+			struct timeval now;
+			vrpn_gettimeofday(&now, NULL);
+			send_text_message(msg, now, vrpn_TEXT_ERROR);
+			d_connection = NULL;
+		}
 
-        // Time stamp of last read event
-        struct timeval _timestamp;
+		/** @brief send report iff changed
 
-        // Helper routine to initialize state of the WiiMote.
-        void initialize_wiimote_state(void);
+			@note class_of_service is only applied to vrpn_Analog values,
+			not vrpn_Button
+		*/
+		void report_changes(vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
+		/** @brief send report whether or not changed
 
-        // Helper functions to handle events
-        void handle_event(void);
+			@note class_of_service is only applied to vrpn_Analog values,
+			not vrpn_Button
+		*/
+		void report(vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
 
-		// Helper function to connect a wiimote
+		/// Time stamp of last read event
+		struct timeval _timestamp;
+
+		/// Helper routine to initialize state of the WiiMote.
+		void initialize_wiimote_state(void);
+
+		/// Helper functions to handle events
+		void handle_event(void);
+
+		/// Helper function to connect a wiimote
 		void connect_wiimote(int timeout);
 
-		// Helper function that defines a mapping for button ids:
+		/// Helper function that defines a mapping for button ids:
 		unsigned map_button(unsigned btn);
 };
 

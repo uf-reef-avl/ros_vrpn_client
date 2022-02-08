@@ -324,11 +324,19 @@ SOURCE=.\vrpn_Text.C
 # End Source File
 # Begin Source File
 
+SOURCE=.\vrpn_Streaming_Arduino.C
+# End Source File
+# Begin Source File
+
 SOURCE=.\vrpn_Tng3.C
 # End Source File
 # Begin Source File
 
 SOURCE=.\vrpn_Tracker.C
+# End Source File
+# Begin Source File
+
+SOURCE=.\vrpn_CHProducts_Controller_Raw.C
 # End Source File
 # Begin Source File
 
@@ -393,6 +401,10 @@ SOURCE=.\vrpn_Wanda.C
 # Begin Source File
 
 SOURCE=.\vrpn_Xkeys.C
+# End Source File
+# Begin Source File
+
+SOURCE=.\vrpn_YEI_3Space.C
 # End Source File
 # Begin Source File
 
@@ -640,11 +652,19 @@ SOURCE=.\vrpn_Text.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\vrpn_Streaming_Arduino.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\vrpn_Tng3.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\vrpn_Tracker.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\vrpn_CHProducts_Controller_Raw.h
 # End Source File
 # Begin Source File
 
@@ -713,6 +733,10 @@ SOURCE=.\vrpn_Wanda.h
 # Begin Source File
 
 SOURCE=.\vrpn_Xkeys.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\vrpn_YEI_3Space.h
 # End Source File
 # Begin Source File
 

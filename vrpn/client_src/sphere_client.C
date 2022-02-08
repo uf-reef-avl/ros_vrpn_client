@@ -3,11 +3,16 @@
 //	generates a sphere with a radius of 3 cm 
 //
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <vrpn_ForceDevice.h>
-#include <vrpn_Tracker.h>
-#include <vrpn_Button.h>
+#include <math.h>                       // for sqrt
+#include <stdio.h>                      // for printf, NULL
+#include <stdlib.h>                     // for atof, exit
+#include <vrpn_Button.h>                // for vrpn_BUTTONCB, etc
+#include <vrpn_ForceDevice.h>           // for vrpn_ForceDevice_Remote, etc
+#include <vrpn_Tracker.h>               // for vrpn_TRACKERCB, etc
+
+#include "vrpn_Configure.h"             // for VRPN_CALLBACK
+#include "vrpn_Connection.h"            // for vrpn_Connection
+#include "vrpn_Types.h"                 // for vrpn_float64
 
 static float xpos,ypos,zpos;
 
@@ -18,7 +23,7 @@ static float xpos,ypos,zpos;
  *
  *****************************************************************************/
 
-void    VRPN_CALLBACK handle_force_change(void *userdata, const vrpn_FORCECB f)
+void    VRPN_CALLBACK handle_force_change(void * /*userdata*/, const vrpn_FORCECB f)
 {
   static vrpn_FORCECB lr;        // last report
   static int first_report_done = 0;
@@ -35,7 +40,7 @@ void    VRPN_CALLBACK handle_force_change(void *userdata, const vrpn_FORCECB f)
 
 vrpn_ForceDevice_Remote *forceDevice;
 
-void    VRPN_CALLBACK handle_tracker_change(void *userdata, const vrpn_TRACKERCB t)
+void    VRPN_CALLBACK handle_tracker_change(void * /*userdata*/, const vrpn_TRACKERCB t)
 {
   static vrpn_TRACKERCB lr; // last report
   static float dist_interval_sq = (float)0.004;
@@ -150,7 +155,7 @@ the maximum stable surface presentable by the device.
   // enable force device and send first surface
   forceDevice->startSurface();
 
-  printf("\n3cm tesselated sphere at the origin should be present always\n");
+  printf("\n3cm sphere at the origin should be present always\n");
   printf("Press and release the Phantom button 3 times to exit\n");
 
   // main loop

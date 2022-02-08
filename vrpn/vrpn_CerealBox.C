@@ -12,15 +12,18 @@
 // the same time as a tracking device without slowing the tracker
 // down.
 
-#include <string.h>
+#include <stdio.h>                      // for fprintf, stderr, perror, etc
+#include <string.h>                     // for NULL, strlen, strncmp
+
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_ERROR
 #include "vrpn_CerealBox.h"
-#include "vrpn_Shared.h"
 #include "vrpn_Serial.h"
+#include "vrpn_Shared.h"                // for timeval, vrpn_gettimeofday
 
 #undef VERBOSE
 
-static char	offset = 0x21;	// Offset added to some characters to avoid ctl chars
-static double	REV_PER_TICK = 1.0/4096;	// How many revolutions per encoder tick?
+static const char	offset = 0x21;	// Offset added to some characters to avoid ctl chars
+static const double	REV_PER_TICK = 1.0/4096;	// How many revolutions per encoder tick?
 
 // Defines the modes in which the box can find itself.
 #define	STATUS_RESETTING	(-1)	// Resetting the box
@@ -28,13 +31,6 @@ static double	REV_PER_TICK = 1.0/4096;	// How many revolutions per encoder tick?
 #define	STATUS_READING		(1)	// Looking for the rest of the report
 
 #define MAX_TIME_INTERVAL       (2000000) // max time between reports (usec)
-
-static	unsigned long	duration(struct timeval t1, struct timeval t2)
-{
-	return (t1.tv_usec - t2.tv_usec) +
-	       1000000L * (t1.tv_sec - t2.tv_sec);
-}
-
 
 // This creates a vrpn_CerealBox and sets it to reset mode. It opens
 // the serial device using the code in the vrpn_Serial_Analog constructor.
@@ -44,7 +40,7 @@ vrpn_CerealBox::vrpn_CerealBox (const char * name, vrpn_Connection * c,
 			const char * port, int baud,
 			const int numbuttons, const int numchannels, const int numencoders):
 		vrpn_Serial_Analog(name, c, port, baud),
-		vrpn_Button(name, c),
+		vrpn_Button_Filter(name, c),
 		vrpn_Dial(name, c),
 		_numbuttons(numbuttons),
 		_numchannels(numchannels),
@@ -72,8 +68,11 @@ vrpn_CerealBox::vrpn_CerealBox (const char * name, vrpn_Connection * c,
 	vrpn_Analog::num_channel = _numchannels;
 	vrpn_Dial::num_dials = _numencoders;
 
+        vrpn_gettimeofday(&timestamp, NULL);	// Set watchdog now
+
 	// Set the status of the buttons, analogs and encoders to 0 to start
 	clear_values();
+  _bufcount = 0;
 
 	// Set the mode to reset
 	_status = STATUS_RESETTING;
@@ -228,7 +227,7 @@ int	vrpn_CerealBox::reset(void)
 
 	//-----------------------------------------------------------------------
 	// Ask the box to send a report, and go into SYNCING mode to get it.
-	vrpn_write_characters(serial_fd, (unsigned char *)"pE", 2);
+	vrpn_write_characters(serial_fd, (const unsigned char *)"pE", 2);
 	status = STATUS_SYNCING;
 	printf("CerealBox reset complete.\n");
 
@@ -353,7 +352,7 @@ int vrpn_CerealBox::get_report(void)
    // after the report has come in.
    //--------------------------------------------------------------------
 
-   vrpn_write_characters(serial_fd, (unsigned char *)"pE", 2);
+   vrpn_write_characters(serial_fd, (const unsigned char *)"pE", 2);
 
    //--------------------------------------------------------------------
    // Decode the report and store the values in it into the parent classes
@@ -386,15 +385,15 @@ int vrpn_CerealBox::get_report(void)
 	}
    }
 
-   {	// Analog code. Looks like there are two characters for each
+   {// Analog code. Looks like there are two characters for each
 	// analog value; this conversion code grabbed right from the
 	// BG code. They seem to come in lowest-numbered first.
 
 	int	intval, i;
 	double	realval;
 	for (i = 0; i < _numchannels; i++) {
-		intval = ((0x3f & (_buffer[nextchar++]-offset)) << 6) |
-			  (0x3f & (_buffer[nextchar++]-offset));
+		intval =  (0x3f & (_buffer[nextchar++]-offset)) << 6;
+		intval |= (0x3f & (_buffer[nextchar++]-offset));
 		realval = -1.0 + (2.0 * intval/4095.0);
 		channel[i] = realval;
 	}
@@ -486,8 +485,10 @@ void	vrpn_CerealBox::mainloop()
 		while (get_report()) {};    // Keep getting reports as long as they come
 		struct timeval current_time;
 		vrpn_gettimeofday(&current_time, NULL);
-		if ( duration(current_time,timestamp) > MAX_TIME_INTERVAL) {
-			fprintf(stderr,"CerealBox failed to read... current_time=%ld:%ld, timestamp=%ld:%ld\n",current_time.tv_sec, current_time.tv_usec, timestamp.tv_sec, timestamp.tv_usec);
+		if ( vrpn_TimevalDuration(current_time,timestamp) > MAX_TIME_INTERVAL) {
+			fprintf(stderr,"CerealBox failed to read... current_time=%ld:%ld, timestamp=%ld:%ld\n",
+					current_time.tv_sec, static_cast<long>(current_time.tv_usec),
+					timestamp.tv_sec, static_cast<long>(timestamp.tv_usec));
 			send_text_message("Too long since last report, resetting", current_time, vrpn_TEXT_ERROR);
 			status = STATUS_RESETTING;
 		}

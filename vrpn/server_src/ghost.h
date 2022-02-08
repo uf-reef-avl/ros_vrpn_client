@@ -25,8 +25,9 @@
 // ability to do what was needed.
 
 #ifdef	VRPN_USE_HDAPI
-  #ifndef M_PI
-  #define M_PI (3.14159265358979323846)
+  #if defined(_WIN32) && !defined(WIN32)
+  // Through version 3.1, the test macro in Sensable's code is wrong.
+  #define WIN32
   #endif
 
   #include <HL/hl.h>
@@ -96,7 +97,7 @@
       d_inContact = inContact;
     }
     void addCollision(const vrpn_HapticPosition &point, const vrpn_HapticVector &dir) {
-      if (d_collisions.size() != 0) {
+      if (!d_collisions.empty()) {
 	fprintf(stderr, "vrpn_HapticCollisionState::addCollision(): Only one allowed\n");
       } else {
 	d_collisions.push_back(vrpn_HapticCollision(point, dir));
@@ -119,6 +120,7 @@
     double  pose[4][4];
     double  last_pose[4][4];
     double  max_stiffness;
+	double	current_force[3];
     int	  instant_rate;
     int	  buttons;
   } HDAPI_state;

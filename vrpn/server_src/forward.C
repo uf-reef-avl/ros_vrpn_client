@@ -24,7 +24,7 @@ void Usage (char * s) {
 
 // Catch control-C and shut down our network connections nicely.
 
-void sighandler (int signal) {
+void sighandler (int /*signal*/) {
   delete forwarder;
   delete server_connection;
   delete client_connection;
@@ -83,7 +83,7 @@ int main (int argc, char ** argv) {
 
   // Open a port for our client to connect to us.
 
-  client_connection = new vrpn_Synchronized_Connection (port);
+  client_connection = vrpn_create_server_connection(port);
 
   // Put a forwarder on that port.
 

@@ -17,10 +17,14 @@
 // which the device echoes.
 
 
-#include <string.h>
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for NULL, memcpy
+
 #include "vrpn_Analog_Radamec_SPI.h"
-#include "vrpn_Shared.h"
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_ERROR, etc
 #include "vrpn_Serial.h"
+#include "vrpn_Shared.h"                // for timeval, vrpn_unbuffer, etc
+#include "vrpn_MessageMacros.h"         // for VRPN_MSG_INFO, VRPN_MSG_WARNING, VRPN_MSG_ERROR
 
 #undef VERBOSE
 
@@ -29,17 +33,7 @@
 #define	STATUS_SYNCING		(0)	// Looking for the first character of report
 #define	STATUS_READING		(1)	// Looking for the rest of the report
 
-#define	SPI_INFO(msg)	    { send_text_message(msg, timestamp, vrpn_TEXT_NORMAL) ; if (d_connection) d_connection->send_pending_reports(); }
-#define	SPI_WARNING(msg)    { send_text_message(msg, timestamp, vrpn_TEXT_WARNING) ; if (d_connection) d_connection->send_pending_reports(); }
-#define	SPI_ERROR(msg)	    { send_text_message(msg, timestamp, vrpn_TEXT_ERROR) ; if (d_connection) d_connection->send_pending_reports(); }
-
 #define MAX_TIME_INTERVAL       (2000000) // max time between reports (usec)
-
-static	unsigned long	duration(struct timeval t1, struct timeval t2)
-{
-	return (t1.tv_usec - t2.tv_usec) +
-	       1000000L * (t1.tv_sec - t2.tv_sec);
-}
 
 // This creates a vrpn_Radamec_SPI and sets it to reset mode. It opens
 // the serial device using the code in the vrpn_Serial_Analog constructor.
@@ -47,14 +41,17 @@ static	unsigned long	duration(struct timeval t1, struct timeval t2)
 vrpn_Radamec_SPI::vrpn_Radamec_SPI (const char * name, vrpn_Connection * c,
 			const char * port, int baud):
 		vrpn_Serial_Analog(name, c, port, baud, 8, vrpn_SER_PARITY_ODD),
-		_numchannels(4),	// This is an estimate; will change when reports come
-		_camera_id(-1)		// Queried from the controller during reset
+		_camera_id(-1),		// Queried from the controller during reset
+		_numchannels(4)	// This is an estimate; will change when reports come
 {
 	// Set the parameters in the parent classes
 	vrpn_Analog::num_channel = _numchannels;
 
+        vrpn_gettimeofday(&timestamp, NULL);	// Set watchdog now
+
 	// Set the status of the buttons and analogs to 0 to start
 	clear_values();
+  _bufcount = 0;
 
 	// Set the mode to reset
 	_status = STATUS_RESETTING;
@@ -102,7 +99,9 @@ unsigned char vrpn_Radamec_SPI::compute_crc(const unsigned char *head, int len)
 int vrpn_Radamec_SPI::send_command(const unsigned char *cmd, int len)
 {
     int		ret;
-    unsigned	char	*outbuf = new unsigned char[len+1]; // Leave room for the CRC
+    unsigned	char	*outbuf;
+    try { outbuf = new unsigned char[len + 1]; } // Leave room for the CRC
+    catch (...) { return -1; }
 
     // Put the command into the output buffer
     memcpy(outbuf, cmd, len);
@@ -257,18 +256,18 @@ int	vrpn_Radamec_SPI::reset(void)
 		return -1;
 	}
 	if (ret == 0) {
-		SPI_ERROR("reset: No response to camera ID from device");
+		VRPN_MSG_ERROR("reset: No response to camera ID from device");
 		return -1;
 	}
 	if (ret != 4) {
 		sprintf(errmsg,"reset: Got %d of %d expected characters for camera ID\n",ret, 4);
-		SPI_ERROR(errmsg);
+		VRPN_MSG_ERROR(errmsg);
 		return -1;
 	}
 
 	// Make sure the string we got back is what we expected and then find out the camera ID
 	if ( (inbuf[0] != 0xa4) || (inbuf[2] != 0x02) || (inbuf[3] != compute_crc(inbuf,3)) ) {
-	    SPI_ERROR("reset: Bad response to camera # request");
+	    VRPN_MSG_ERROR("reset: Bad response to camera # request");
 	    return -1;
 	}
 	_camera_id = inbuf[1];
@@ -285,30 +284,30 @@ int	vrpn_Radamec_SPI::reset(void)
 	ret = vrpn_read_available_characters(serial_fd, inbuf, 4, &timeout);
 	inbuf[4] = 0;		// Make sure string is NULL-terminated
 	if (ret < 0) {
-		SPI_ERROR("reset: Error reading from device");
+		VRPN_MSG_ERROR("reset: Error reading from device");
 		return -1;
 	}
 	if (ret == 0) {
-		SPI_ERROR("reset: No response from device");
+		VRPN_MSG_ERROR("reset: No response from device");
 		return -1;
 	}
 	if (ret != 4) {
 		sprintf(errmsg,"vrpn_Radamec_SPI reset: Got %d of %d expected characters\n",ret, 4);
-		SPI_ERROR(errmsg);
+		VRPN_MSG_ERROR(errmsg);
 		return -1;
 	}
 
 	// Make sure the string we got back is what we expected
 	if ( (inbuf[0] != 0xa4) || (inbuf[1] != _camera_id) || (inbuf[2] != 0x01) ||
 		(inbuf[3] != compute_crc(inbuf,3)) ) {
-	    SPI_ERROR("reset: Bad response to start stream mode command");
+	    VRPN_MSG_ERROR("reset: Bad response to start stream mode command");
 	    return -1;
 	}
 */
 	// We're now waiting for a response from the box
 	status = STATUS_SYNCING;
 
-	SPI_WARNING("reset complete (this is good)");
+	VRPN_MSG_WARNING("reset complete (this is good)");
 
 	vrpn_gettimeofday(&timestamp, NULL);	// Set watchdog now
 	return 0;
@@ -386,7 +385,7 @@ int vrpn_Radamec_SPI::get_report(void)
    ret = vrpn_read_available_characters(serial_fd, &_buffer[_bufcount],
 		_expected_chars-_bufcount);
    if (ret == -1) {
-	SPI_ERROR("Error reading");
+	VRPN_MSG_ERROR("Error reading");
 	status = STATUS_RESETTING;
 	return 0;
    }
@@ -409,7 +408,7 @@ int vrpn_Radamec_SPI::get_report(void)
 
    if (_buffer[_expected_chars-1] != compute_crc(_buffer, _expected_chars-1) ) {
 	   status = STATUS_SYNCING;
-      	   SPI_WARNING("Bad CRC in report (ignoring this report)");
+      	   VRPN_MSG_WARNING("Bad CRC in report (ignoring this report)");
 	   return 0;
    }
    _camera_id = _buffer[1];
@@ -484,7 +483,7 @@ int vrpn_Radamec_SPI::get_report(void)
 
      default:
 	sprintf(errmsg,"vrpn_Radamec_SPI: Unhandled command (0x%02x), resetting\n", _buffer[0]);
-	SPI_ERROR(errmsg);
+	VRPN_MSG_ERROR(errmsg);
 	status = STATUS_RESETTING;
 	return 0;
    }
@@ -548,16 +547,18 @@ void	vrpn_Radamec_SPI::mainloop()
 
 	    struct timeval current_time;
 	    vrpn_gettimeofday(&current_time, NULL);
-	    if ( duration(current_time,timestamp) > MAX_TIME_INTERVAL) {
-		    sprintf(errmsg,"Timeout... current_time=%ld:%ld, timestamp=%ld:%ld",current_time.tv_sec, current_time.tv_usec, timestamp.tv_sec, timestamp.tv_usec);
-		    SPI_ERROR(errmsg);
+	    if ( vrpn_TimevalDuration(current_time,timestamp) > MAX_TIME_INTERVAL) {
+		    sprintf(errmsg,"Timeout... current_time=%ld:%ld, timestamp=%ld:%ld",
+					current_time.tv_sec, static_cast<long>(current_time.tv_usec),
+					timestamp.tv_sec, static_cast<long>(timestamp.tv_usec));
+		    VRPN_MSG_ERROR(errmsg);
 		    status = STATUS_RESETTING;
 	    }
       }
         break;
 
     default:
-	SPI_ERROR("Unknown mode (internal error)");
+	VRPN_MSG_ERROR("Unknown mode (internal error)");
 	break;
   }
 }

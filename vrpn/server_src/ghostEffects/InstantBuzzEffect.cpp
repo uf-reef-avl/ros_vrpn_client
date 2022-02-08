@@ -6,16 +6,14 @@
 
 #include "InstantBuzzEffect.h"
 #ifdef	VRPN_USE_PHANTOM_SERVER
+
 #ifdef	VRPN_USE_HDAPI
 #include <HD/hd.h>
 #else
 #include <gstPHANToM.h>
 #endif
-#ifdef _WIN32
-#include <windows.h>
-#endif
+
 #include <math.h>
-#include "InstantBuzzEffect.h"
 
 #ifdef	VRPN_USE_HDAPI
 vrpn_HapticVector  InstantBuzzEffect::calcEffectForce(void) {
@@ -27,18 +25,21 @@ gstVector InstantBuzzEffect::calcEffectForce(void *phantom) {
       return vrpn_HapticVector(0,0,0);
     }
 
+// XXX Needs to be implemented on non-Windows platforms.  Use
+// the gettimeofday() function to calculate timing on those platforms.
+// We might want to switch to vrpn_gettimeofday() on all platforms, since
+// that is now implemented on Windows.
+#ifdef	_WIN32
     LARGE_INTEGER counter;
 	
     if (currentPerformanceFrequency.HighPart == 0 && currentPerformanceFrequency.LowPart == 0) {
       return vrpn_HapticVector(0,0,0);
     }
 
-#ifdef	_WIN32
     if (QueryPerformanceCounter(&counter) != TRUE){
 	fprintf(stderr, "unable to get perfo counter\n");
 	return vrpn_HapticVector(0,0,0);
     }
-#endif
 
     double elapsedSec =  (counter.QuadPart - debut.QuadPart) / (double) currentPerformanceFrequency.QuadPart;
     if (elapsedSec < getDuration()) {
@@ -48,6 +49,7 @@ gstVector InstantBuzzEffect::calcEffectForce(void *phantom) {
 	double force = currentForce*getAmplitude();
 	return vrpn_HapticVector( x*force, y*force, z*force );
     }
+#endif
 
       return vrpn_HapticVector(0,0,0);
 }

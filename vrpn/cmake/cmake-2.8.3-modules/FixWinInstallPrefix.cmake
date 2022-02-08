@@ -1,6 +1,6 @@
 # - Automatically fix CMAKE_INSTALL_PREFIX to be bit-appropriate on Win
 #
-# This is a workaround for CMake bug #9992 in at least <=2.8.0 - see
+# This is a workaround for CMake bug #9992 in <2.8.3 - see
 # http://public.kitware.com/Bug/view.php?id=9992
 #
 # It runs automatically when included on a Windows build (passes if(WIN32)) -
@@ -11,6 +11,11 @@
 # 2009-2010 Ryan Pavlik <rpavlik@iastate.edu> <abiryan@ryand.net>
 # http://academic.cleardefinition.com
 # Iowa State University HCI Graduate Program/VRAC
+#
+# Copyright Iowa State University 2009-2010.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file ../LICENSE_1_0.txt or copy at
+# http://www.boost.org/LICENSE_1_0.txt)
 
 if(WIN32)
 	# caution - ENV{ProgramFiles} on Win64 is adjusted to point to the arch
@@ -22,7 +27,8 @@ if(WIN32)
 	file(TO_CMAKE_PATH "$ENV{ProgramFiles}" _PROG_FILES)
 
 	# 32-bit dir: only set on win64
-	file(TO_CMAKE_PATH "$ENV{ProgramFiles(x86)}" _PROG_FILES_X86)
+    set(_PF86 "ProgramFiles(x86)")
+	file(TO_CMAKE_PATH "$ENV{${_PF86}}" _PROG_FILES_X86)
 
 	# 64-bit dir: only set on win64
 	file(TO_CMAKE_PATH "$ENV{ProgramW6432}" _PROG_FILES_W6432)

@@ -1,17 +1,22 @@
 /// This object has been superceded by the vrpn_Tracker_AnalogFly object.
 
-#include <string.h>
+#include <math.h>                       // for fabs
+#include <string.h>                     // for memcpy
+
+#include "quat.h"                       // for q_matrix_copy, etc
+#include "vrpn_Connection.h"            // for vrpn_Connection, etc
 #include "vrpn_JoyFly.h"
+#include "vrpn_Types.h"                 // for vrpn_float64, vrpn_int32
 
 vrpn_Tracker_JoyFly::vrpn_Tracker_JoyFly
         (const char * name, vrpn_Connection * c,
          const char * source, const char * set_config,
          vrpn_Connection * sourceConnection) :
-    vrpn_Tracker (name, c)  {
+    vrpn_Tracker (name, c)
+{
   int i;
 
-
-  joy_remote = new vrpn_Analog_Remote (source, sourceConnection);
+  joy_remote = new vrpn_Analog_Remote(source, sourceConnection);
   joy_remote->register_change_handler(this, handle_joystick);
   c->register_handler(c->register_message_type(vrpn_got_connection),
 		      handle_newConnection, this);
@@ -24,24 +29,35 @@ vrpn_Tracker_JoyFly::vrpn_Tracker_JoyFly
       chanAccel[i] = 1.0;
       chanPower[i] = 1;
     }
-    for ( i =0; i< 4; i++)
-      for (int j=0; j< 4; j++) 
+    for ( i =0; i< 4; i++) {
+      for (int j=0; j< 4; j++) {
 	initMatrix[i][j] = 0;
+      }
+    }
     initMatrix[0][0] =     initMatrix[2][2] =     
-      initMatrix[1][1] =     initMatrix[3][3] = 1.0;
+    initMatrix[1][1] =     initMatrix[3][3] = 1.0;
   } else {
     for (i=0; i< 7; i++) {
-      fscanf(fp, "%lf %d", &chanAccel[i], &chanPower[i]);
+      if (fscanf(fp, "%lf %d", &chanAccel[i], &chanPower[i]) != 2) {
+	fprintf(stderr,"Cannot read acceleration and power from file\n");
+	fclose(fp);
+	return;
+      }
       fprintf(stderr, "Chan[%d] = (%lf %d)\n", i, chanAccel[i], chanPower[i]);
     }
-    for (i =0; i< 4; i++)
-      for (int j=0; j< 4; j++) 
-	fscanf(fp, "%lf", &initMatrix[i][j]);
+    for (i =0; i< 4; i++) {
+      for (int j=0; j< 4; j++) {
+	if (fscanf(fp, "%lf", &initMatrix[i][j]) < 0) {
+		perror("vrpn_Tracker_JoyFly::vrpn_Tracker_JoyFly(): Could not read matrix value");
+		fclose(fp);
+		return;
+	}
+      }
+    }
     fclose(fp);
-  }  
-  
-  q_matrix_copy(currentMatrix, initMatrix);
+  }
 
+  q_matrix_copy(currentMatrix, initMatrix);
 }
 
 vrpn_Tracker_JoyFly::~vrpn_Tracker_JoyFly()

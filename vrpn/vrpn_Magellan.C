@@ -28,10 +28,13 @@
 // alternate reset string that works on his.  This is sent if the
 // 'altreset' parameter is true in the constructor.
 
-#include <string.h>
+#include <stdio.h>                      // for fprintf, stderr
+#include <string.h>                     // for strlen, NULL, strcmp
+
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_ERROR
 #include "vrpn_Magellan.h"
-#include "vrpn_Shared.h"
 #include "vrpn_Serial.h"
+#include "vrpn_Shared.h"                // for timeval, vrpn_SleepMsecs, etc
 
 #undef VERBOSE
 
@@ -42,22 +45,6 @@
 
 #define MAX_TIME_INTERVAL       (2000000) // max time between reports (usec)
 
-// This routine writes out the characters slowly, so as not to
-// overburden the poor Magellan, which seems to choke when a
-// bunch of characters are all sent at once.
-static	int	vrpn_write_slowly(int fd, unsigned char *buffer, int len, int MsecWait)
-{	int	i;
-
-	for (i = 0; i < len; i++) {
-		vrpn_SleepMsecs(MsecWait);
-		if (vrpn_write_characters(fd, &buffer[i], 1) != 1) {
-			return -1;
-		}
-	}
-	return len;
-}
-
-
 // This creates a vrpn_Magellan and sets it to reset mode. It opens
 // the serial device using the code in the vrpn_Serial_Analog constructor.
 // The box seems to autodetect the baud rate when the "T" command is sent
@@ -65,21 +52,29 @@ static	int	vrpn_write_slowly(int fd, unsigned char *buffer, int len, int MsecWai
 vrpn_Magellan::vrpn_Magellan (const char * name, vrpn_Connection * c,
 			const char * port, int baud, bool altreset):
 		vrpn_Serial_Analog(name, c, port, baud),
-		vrpn_Button(name, c),
+		vrpn_Button_Filter(name, c),
+		_altreset(altreset),
 		_numbuttons(9),
 		_numchannels(6),
-		_null_radius(8),
-		_altreset(altreset)
+		_null_radius(8)
 {
 	// Set the parameters in the parent classes
 	vrpn_Button::num_buttons = _numbuttons;
 	vrpn_Analog::num_channel = _numchannels;
 
+        vrpn_gettimeofday(&timestamp, NULL);	// Set watchdog now
+
 	// Set the status of the buttons and analogs to 0 to start
 	clear_values();
+  _bufcount = 0;
 
 	// Set the mode to reset
 	_status = STATUS_RESETTING;
+
+	// Wait before the first time we attempt a reset - seems to be a race condition
+	// with the device needing time between opening of the serial connection and
+	// receiving the reset commands. (SpaceMouse Plus XT Serial, version 6.60)
+	vrpn_SleepMsecs(1000);
 }
 
 void	vrpn_Magellan::clear_values(void)
@@ -130,7 +125,7 @@ int	vrpn_Magellan::reset(void)
 	// Read back the response and make sure it matches what we expect.
 	// Give it a reasonable amount of time to finish, then timeout
 	vrpn_flush_input_buffer(serial_fd);
-	vrpn_write_slowly(serial_fd, (unsigned char *)reset_str, strlen(reset_str), 5);
+	vrpn_write_slowly(serial_fd, (const unsigned char *)reset_str, strlen(reset_str), 5);
 	timeout.tv_sec = 1;
 	timeout.tv_usec = 0;
 	ret = vrpn_read_available_characters(serial_fd, inbuf, strlen(expect_back), &timeout);

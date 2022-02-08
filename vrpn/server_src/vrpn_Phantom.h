@@ -137,7 +137,7 @@ protected:
 	virtual bool addObjectExScene(vrpn_int32 objNum); 
 	// vertNum normNum and triNum start at 0
 	virtual bool setVertex(vrpn_int32 objNum, vrpn_int32 vertNum,vrpn_float32 x,vrpn_float32 y,vrpn_float32 z);
-    // NOTE: ghost dosen't take normals, 
+    // NOTE: ghost doesn't take normals, 
     //       and normals still aren't implemented for Hcollide
     virtual bool setNormal(vrpn_int32 objNum, vrpn_int32 normNum,vrpn_float32 x,vrpn_float32 y,vrpn_float32 z);
     virtual bool setTriangle(vrpn_int32 objNum, vrpn_int32 triNum,vrpn_int32 vert0,vrpn_int32 vert1,vrpn_int32 vert2,
@@ -185,7 +185,7 @@ public:
 	// Jean SIMARD <jean.simard@limsi.fr>
 	// Modification of the constructor
 	// The default value is the default value use by the tool of SensAble
-	vrpn_Phantom(char *name, vrpn_Connection *c, float hz=1.0, char * newsconf="Default PHANToM");
+	vrpn_Phantom(char *name, vrpn_Connection *c, float hz=1.0, const char * newsconf="Default PHANToM");
 	~vrpn_Phantom();
 
 	virtual void mainloop(void);

@@ -13,17 +13,16 @@
 #ifndef VRPN_TRACKER_FASTRAK_H
 #define VRPN_TRACKER_FASTRAK_H
 
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#ifndef _WIN32
-#include <sys/time.h>
-#endif
+#include <stdio.h>                      // for NULL
 
-#include "vrpn_Tracker.h"
-#include "vrpn_Button.h"
-#include "vrpn_Analog.h"
+#include "vrpn_Configure.h"             // for VRPN_API
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Tracker.h"               // for vrpn_Tracker_Serial
+#include "vrpn_Types.h"                 // for vrpn_uint32
+
+class VRPN_API vrpn_Button_Server;
+class VRPN_API vrpn_Clipping_Analog_Server;
+class VRPN_API vrpn_Connection;
 
 const int vrpn_FASTRAK_MAX_STATIONS = 4;    //< How many stations can exist
 
@@ -74,17 +73,11 @@ class VRPN_API vrpn_Tracker_Fastrak: public vrpn_Tracker_Serial {
   virtual int get_report(void);
   virtual void reset();
 
-  /// Swap the endian-ness of the 4-byte entry in the buffer.
-  /// This is used to make the little-endian IEEE float values
-  /// returned by the Fastrak into the big-endian format that is
-  /// expected by the VRPN unbuffer routines.
-
-  void swap_endian4(char *buffer);
-
   struct timeval reset_time;
   int	do_filter;		//< Should we turn on filtering for pos/orient?
   int	num_stations;		//< How many stations maximum on this Fastrak?
   char	add_reset_cmd[2048];	//< Additional reset commands to be sent
+  int   num_resets;		//< How many resets we have tried.
 
   // another modification by Debug, 5/23/01
   bool really_fastrak;  // to distinguish it from intersense when using buttons!!!

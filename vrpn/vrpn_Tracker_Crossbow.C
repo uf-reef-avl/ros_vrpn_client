@@ -1,19 +1,27 @@
 // vrpn_Tracker_Crossbow.h
 //	This file contains the implementation for a Crossbow RGA300CA Tracker.
 
-#include <string.h>
-#include "vrpn_Tracker_Crossbow.h"
-#include "vrpn_Serial.h"
-#include "quat.h"
+#include <math.h>                       // for cos, sin
+#include <stdio.h>                      // for fprintf, stderr, NULL
+#include <stdlib.h>                     // for realloc, free
+#include <string.h>                     // for memset
 
-// Conversion multiplier from degrees to radians (Pi radians per 180 degrees)
-#define DEGREES_TO_RADIANS (3.1415926535897 / 180)
+#include "quat.h"                       // for q_from_euler, Q_W, Q_X, Q_Y, etc
+#include "vrpn_Connection.h"            // for vrpn_CONNECTION_LOW_LATENCY, etc
+#include "vrpn_Serial.h"
+#include "vrpn_Tracker_Crossbow.h"
+
 // Conversion multiplier from Gs to meters-per-second-per-second (~9.8 m/s^2 on Earth)
 #define MPSS_PER_G (9.80665)
 
 vrpn_Tracker_Crossbow::vrpn_Tracker_Crossbow(const char *name, vrpn_Connection *c, const char *port, long baud, 
-	float g_range, float ar_range) : vrpn_Tracker_Serial(name, c, port, baud), just_read_something(0),
-	lin_accel_range(g_range), ang_accel_range(ar_range), device_version(0), device_serial(0)
+	float g_range, float ar_range)
+  : vrpn_Tracker_Serial(name, c, port, baud)
+  , lin_accel_range(g_range)
+  , ang_accel_range(ar_range)
+  , device_serial(0)
+  , device_version(0)
+  , just_read_something(0)
 {
 }
 
@@ -25,7 +33,7 @@ vrpn_Tracker_Crossbow::~vrpn_Tracker_Crossbow() {
 }
 
 // Retrieves a raw_packet from an incoming byte array, and even flips endianness as necessary.
-void vrpn_Tracker_Crossbow::unbuffer_packet(raw_packet &dest, const char *buffer) {
+void vrpn_Tracker_Crossbow::unbuffer_packet(raw_packet &dest, unsigned char *buffer) {
 	vrpn_unbuffer(&buffer, &dest.header);
 	vrpn_unbuffer(&buffer, &dest.roll_angle);
 	vrpn_unbuffer(&buffer, &dest.pitch_angle);
@@ -41,20 +49,25 @@ void vrpn_Tracker_Crossbow::unbuffer_packet(raw_packet &dest, const char *buffer
 }
 
 int vrpn_Tracker_Crossbow::validate_packet(const raw_packet &packet) {
-	// Convert the packet to a string of bytes (may cause alignment issues on non-x86 architectures)
-	const vrpn_uint8 *bytes = reinterpret_cast<const vrpn_uint8 *>(&packet);
+
+	// Allow accessing the packet as a string of bytes
+	union {
+		raw_packet packet;
+		vrpn_uint8 bytes[sizeof(raw_packet)];
+	} aligned;
+	aligned.packet = packet;
 
 	// Check the header for the magic number
 	if (packet.header != 0xAA55) {
 		fprintf(stderr, "vrpn_Tracker_Crossbow: Received packet with invalid header $%02X%02X (should be $AA55)\n",
-			bytes[0], bytes[1]);
+			aligned.bytes[0], aligned.bytes[1]);
 		return 1;
 	}
 
 	// Now calculate the expected checksum
 	vrpn_uint16 checksum = 0;
 	for (int i = 2; i < 22; i++)
-		checksum += bytes[i];
+		checksum += aligned.bytes[i];
 
 	// And compare the two checksum values.
 	if (checksum != packet.checksum) {
@@ -128,7 +141,7 @@ int vrpn_Tracker_Crossbow::get_report() {
 				return 0;
 
 			raw_packet new_data;
-			unbuffer_packet(new_data, reinterpret_cast<const char*>(&buffer[0]));
+			unbuffer_packet(new_data, &buffer[0]);
 
 			// Ensure the packet is valid
 			if (validate_packet(new_data)) {
@@ -219,6 +232,11 @@ void vrpn_Tracker_Crossbow::reset() {
 
 	int curSize = 4, curLen = 0;
 	device_version = (char *) realloc(device_version, curSize * sizeof(char));
+	if (device_version == NULL) {
+		fprintf(stderr, "vrpn_Tracker_Crossbow::reset: Out of memory\n");
+		status = vrpn_TRACKER_FAIL;
+		return;
+	}
 	do {
 		if (!vrpn_read_available_characters(serial_fd, recv_buf, 1, &timeout)) {
 			fprintf(stderr, "vrpn_Tracker_Crossbow::reset: Crossbow not responding to stimulus\n");
@@ -325,8 +343,8 @@ void vrpn_Tracker_Crossbow::process_packet(const raw_packet &packet) {
 	memset(pos, 0, sizeof(pos));
 	
 	// Calculate the current orientation. (We don't know yaw, so report 0.)
-	double pitch = convert_scalar(packet.pitch_angle, 180.0f) * DEGREES_TO_RADIANS;
-	double roll = convert_scalar(packet.roll_angle, 180.0f) * DEGREES_TO_RADIANS;
+	double pitch = convert_scalar(packet.pitch_angle, 180.0f) * VRPN_DEGREES_TO_RADIANS;
+	double roll = convert_scalar(packet.roll_angle, 180.0f) * VRPN_DEGREES_TO_RADIANS;
 	xb_quat_from_euler(d_quat, pitch, roll);
 
 	// Clear the linear velocity; we don't know it.
@@ -334,7 +352,7 @@ void vrpn_Tracker_Crossbow::process_packet(const raw_packet &packet) {
 
 	// Calculate the current angular velocity from yaw rate
 	// It's in degrees per second, so convert to radians per second.
-	q_from_euler(vel_quat, convert_scalar(packet.yaw_rate, 1.5f * ang_accel_range) * DEGREES_TO_RADIANS, 0, 0);
+	q_from_euler(vel_quat, convert_scalar(packet.yaw_rate, 1.5f * ang_accel_range) * VRPN_DEGREES_TO_RADIANS, 0, 0);
 	vel_quat_dt = 1;
 
 	// Calculate the current acceleration vector

@@ -1,8 +1,11 @@
-#include  <math.h>
-#include  <stdlib.h>
-#include  <stdio.h>
-#include  "vrpn_Connection.h"
-#include  "vrpn_Imager.h"
+#include <math.h>                       // for pow
+#include <stdio.h>                      // for fprintf, stderr, NULL, etc
+#include <stdlib.h>                     // for rand
+
+#include "vrpn_Configure.h"             // for VRPN_CALLBACK
+#include "vrpn_Connection.h"
+#include "vrpn_Imager.h"                // for vrpn_IMAGERREGIONCB, etc
+#include "vrpn_Types.h"                 // for vrpn_uint16
 
 //-----------------------------------------------------------------
 // This section contains a copy of an image that is shared between
@@ -156,7 +159,7 @@ void  mainloop_client_code(void)
 // the main() program body without trouble (except for the callback
 // handler, of course).
 
-int main(int argc, char *argv[])
+int main(int, char *[])
 {
   if (!init_test_image()) { return -1; }
   if (!init_server_code()) { return -1; }
@@ -169,6 +172,8 @@ int main(int argc, char *argv[])
 
   if (clt) { delete clt; }
   if (svr) { delete svr; }
+
+  svrcon->removeReference();
 
   return 0;
 }

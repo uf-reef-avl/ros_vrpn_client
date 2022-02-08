@@ -1,8 +1,12 @@
 #ifndef VRPN_ZABER_H
 #define VRPN_ZABER_H
 
-#include "vrpn_Analog.h"
-#include "vrpn_Analog_Output.h"
+#include "vrpn_Analog.h"                // for vrpn_Serial_Analog
+#include "vrpn_Analog_Output.h"         // for vrpn_Analog_Output
+#include "vrpn_Configure.h"             // for VRPN_CALLBACK, VRPN_API
+#include "vrpn_Connection.h"            // for vrpn_CONNECTION_RELIABLE, etc
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Types.h"                 // for vrpn_int32, vrpn_uint32
 
 class VRPN_API vrpn_Zaber: public vrpn_Serial_Analog, public vrpn_Analog_Output
 {
@@ -15,11 +19,12 @@ public:
 	virtual void mainloop ();
 
   protected:
-	int d_expected_chars;	      //< How many characters to expect in the report
+	unsigned d_expected_chars;	      //< How many characters to expect in the report
 	unsigned char d_buffer[512];  //< Buffer of characters in report
-	int d_bufcount;		      //< How many characters we have so far
+	unsigned d_bufcount;		      //< How many characters we have so far
 
 	struct timeval timestamp;   //< Time of the last report from the device
+	struct timeval d_last_poll; //< Time of last poll of the device.
 
 	virtual int reset(void);		//< Set device back to starting config
 	virtual	int get_report(void);		//< Try to read a report from the device

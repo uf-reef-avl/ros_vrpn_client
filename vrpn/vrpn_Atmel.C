@@ -15,20 +15,21 @@
 
 #ifndef _WIN32
 
+#include <errno.h>                      // for errno
+#include <stdio.h>                      // for fprintf, stderr, printf, etc
+#include <stdlib.h>                     // for exit
+#include <sys/select.h>                 // for select, FD_SET, FD_ZERO, etc
+#include <vrpn_Shared.h>                // for vrpn_gettimeofday
+
 #include "vrpn_Atmel.h"
-#include "vrpn_atmellib.h"
-#include "vrpn_atmellib_helper.h"
+#include "vrpn_Connection.h"            // for vrpn_Connection
+#include "vrpn_Types.h"                 // for vrpn_float64
+#include "vrpn_atmellib.h"              // for getRegister, closePort, etc
+#include "vrpn_atmellib_errno.h"        // for ATMELLIB_NOERROR
 
-#include <errno.h>
-#include <stdio.h>
+#include <termios.h>                    // for tcflush, TCIOFLUSH, termios
 
-#if !defined(_WIN32)
-#include <unistd.h>
-#include <termios.h>
-#endif
-
-#include <string>
-#include <string.h>
+#include <string.h>                     // for strerror
 
 /***************************************************************************************************/
 /***************************************************************************************************/
@@ -43,8 +44,6 @@ struct timeval wait;
 bool
 check_serial(int fd)
 {
-  char user_in;
-
   int ret=0;
 	  
   // make a new fd set to watch
@@ -86,8 +85,8 @@ check_serial(int fd)
 /* factory */
 /***************************************************************************************************/
 /* static */ vrpn_Atmel *
-vrpn_Atmel::Create(char* name, vrpn_Connection *c, 
-                    char *port, long baud,
+vrpn_Atmel::Create(char* name, vrpn_Connection *c,
+                    const char *port, long baud,
 		    int channel_count ,
 		    int * channel_mode)
 {	
@@ -117,13 +116,20 @@ vrpn_Atmel::Create(char* name, vrpn_Connection *c,
   }
 #endif 
  
-  vrpn_Atmel * self = new vrpn_Atmel(name, c, fd);
+  vrpn_Atmel * self = NULL;
+  try { self = new vrpn_Atmel(name, c, fd); }
+  catch (...) { return NULL; }
       
   if ( (self->vrpn_Analog_Server::setNumChannels(channel_count) != channel_count) 
      || (self->vrpn_Analog_Output_Server::setNumChannels(channel_count) != channel_count) ) {
   
       fprintf(stderr,"vrpn_Atmel: the requested number of channels is not available\n");
-      delete self;
+      try {
+        delete self;
+      } catch (...) {
+        fprintf(stderr, "vrpn_Atmel::Create(): delete failed\n");
+        return NULL;
+      }
 
       return NULL;
   }
@@ -148,8 +154,8 @@ vrpn_Atmel::vrpn_Atmel(char* name, vrpn_Connection *c, int fd)
     serial_fd(fd)
 {	
   // find out what time it is - needed?
-  gettimeofday(&timestamp, 0);
-  gettimeofday(&_time_alive, 0);
+  vrpn_gettimeofday(&timestamp, 0);
+  vrpn_gettimeofday(&_time_alive, 0);
   vrpn_Analog::timestamp = timestamp;
 }
 
@@ -243,7 +249,7 @@ vrpn_Atmel::Check_Serial_Alive()
   if ((timestamp.tv_sec - _time_alive.tv_sec) > VRPN_ATMEL_ALIVE_INTERVAL_SEC) {
 
     // reset time alive
-    gettimeofday(&_time_alive,0);
+    vrpn_gettimeofday(&_time_alive,0);
 
     tcflush(serial_fd, TCIOFLUSH);
 
@@ -283,7 +289,7 @@ vrpn_Atmel::Check_Serial_Alive()
 bool
 vrpn_Atmel::mainloop_serial_io() 
 {
-  gettimeofday(&timestamp, 0);
+  vrpn_gettimeofday(&timestamp, 0);
   vrpn_Analog::timestamp = timestamp;
 
   // check if there is still a valid connection to the Chip
@@ -343,7 +349,7 @@ vrpn_Atmel::mainloop_serial_io()
       else {
 
         fprintf(stderr,"vrpn_Atmel: mainloop_serial_io()\n");
-        fprintf(stderr,"  writen down value, channel: %d\n",i);
+        fprintf(stderr,"  written down value, channel: %d\n",i);
       }
       
       // no error
@@ -384,7 +390,7 @@ vrpn_Atmel::mainloop_serial_io()
 
 
 /***************************************************************************************************/
-/* init the io mode of the channels:
+/* init the io mode of the channels: */
 /***************************************************************************************************/
 void
 vrpn_Atmel::init_channel_mode(int * channel_mode)
@@ -432,7 +438,7 @@ vrpn_Atmel::init_channel_mode(int * channel_mode)
 
 
 /***************************************************************************************************/
-/* init the io mode of the channels:
+/* init the io mode of the channels: */
 /***************************************************************************************************/
 bool
 vrpn_Atmel::handle_new_connection()

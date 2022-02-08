@@ -13,11 +13,14 @@
 /**************************************************************************************************/
 
 
+// includes, system
+#include <stdio.h>                      // for fprintf, stderr, NULL
+#include "vrpn_Shared.h"                // for vrpn_gettimeofday
+
 // includes, file
 #include "vrpn_Event_Analog.h"
 
-// includes, system
-#include <stdio.h>
+class VRPN_API vrpn_Connection;
 
 
 /**************************************************************************************************/
@@ -28,8 +31,8 @@ vrpn_Event_Analog::vrpn_Event_Analog ( const char * name,
                                        const char* evdev_name) : 
   vrpn_Analog( name, c),
   fd(-1),
-  event_data( event_vector_t( 16)),
-  max_num_events( 16)
+  max_num_events( 16),
+  event_data( event_vector_t( 16))
 {
   #if defined(_WIN32)
 
@@ -60,7 +63,7 @@ vrpn_Event_Analog::vrpn_Event_Analog ( const char * name,
     }
  
     // set the time 
-    gettimeofday(&timestamp, NULL);
+    vrpn_gettimeofday(&timestamp, NULL);
 
   #endif // #if defined(LINUX) 
 }
@@ -95,7 +98,7 @@ vrpn_Event_Analog::read_available_data () {
 
     return vrpn_Event::vrpn_read_event( fd, &(event_data.front()), max_num_events); 
 
-  #else // if defined(LINUX)
+  #else // not Windows
   
     // check for updates at max_num_events
     if (max_num_events != event_data.size()) {
@@ -108,5 +111,5 @@ vrpn_Event_Analog::read_available_data () {
     // read data
     return vrpn_Event::vrpn_read_event( fd, &(event_data.front()), max_num_events); 
 
-  #endif  // #if defined(LINUX)
+  #endif  // not Windows
 }

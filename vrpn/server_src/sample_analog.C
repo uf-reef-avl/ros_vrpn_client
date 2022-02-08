@@ -70,7 +70,7 @@ int main (int argc, char ** argv) {
 
   struct timeval delay;
 
-  c = new vrpn_Synchronized_Connection;
+  c = vrpn_create_server_connection();
   ats = new vrpn_Analog_Server ("audio_throughput", c);
   ats->setNumChannels(1);
   vts = new vrpn_Analog_Server ("video_throughput", c);
@@ -87,8 +87,10 @@ int main (int argc, char ** argv) {
   while (1) {
     do_audio_throughput_magic(ats->channels());
     ats->report_changes();
+    ats->mainloop();
     do_video_throughput_magic(vts->channels());
     vts->report_changes();
+    vts->mainloop();
     c->mainloop(&delay);
 fprintf(stderr, "while():  a = %.2g, v = %.2g.\n", ats->channels()[0],
 vts->channels()[0]);

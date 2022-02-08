@@ -1,5 +1,5 @@
 #############################################################################
-# 
+#
 # makefile for quaternion lib
 #
 #############################################################################
@@ -26,7 +26,22 @@
 #HW_OS := powerpc_aix
 #HW_OS := powerpc_macosx
 #HW_OS := universal_macosx
+#HW_OS := macosx_32_64
+#HW_OS := macosx_64
 ##########################
+
+##########################
+# Mac OS X-specific options. If HW_OS is powerpc_macosx or universal_macosx,
+# uncomment one line below to choose the minimum targeted OS X version and
+# corresponding SDK. If none of the lines below is commented out, 10.5 will
+# be the minimum version.
+##########################
+#MAC_OS_MIN_VERSION := 10.4
+#MAC_OS_MIN_VERSION := 10.5
+#MAC_OS_MIN_VERSION := 10.6
+#MAC_OS_MIN_VERSION := 10.7
+#MAC_OS_MIN_VERSION := 10.8
+
 
 INSTALL_DIR := /usr/local
 BIN_DIR := $(INSTALL_DIR)/bin
@@ -104,11 +119,63 @@ ifeq ($(HW_OS), pc_linux64)
   CC = gcc -m64 -fPIC
 endif
 
-ifeq ($(HW_OS), universal_macosx)
-  CC = gcc -arch ppc -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4
+ifneq (,$(findstring macosx,$(HW_OS)))
+  ifndef MAC_OS_MIN_VERSION
+    MAC_OS_MIN_VERSION := 10.5
+  endif
+
+    # Select which compiler and MAC OS X SDK to use
+    MAC_GCC := g++
+    ifeq ($(MAC_OS_MIN_VERSION), 10.8)
+      MAC_OS_SDK := MacOSX10.8.sdk
+    else
+    ifeq ($(MAC_OS_MIN_VERSION), 10.7)
+      MAC_OS_SDK := MacOSX10.7.sdk
+    else
+   ifeq ($(MAC_OS_MIN_VERSION), 10.6)
+      MAC_OS_SDK := MacOSX10.6.sdk
+    else
+      ifeq ($(MAC_OS_MIN_VERSION), 10.5)
+        MAC_OS_SDK := MacOSX10.5.sdk
+      else
+        MAC_OS_SDK := MacOSX10.4u.sdk
+        MAC_GCC := g++-4.0
+      endif
+    endif
+  endif
+ endif
+endif
+
+ifeq ($(HW_OS), powerpc_macosx)
+  CC = $(MAC_GCC) -arch ppc -isysroot /Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
   AR = libtool -static -o
   RANLIB = :
 endif
+
+ifeq ($(HW_OS), universal_macosx)
+  CC = $(MAC_GCC) -arch ppc -arch i386 -arch x86_64 -isysroot /Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
+  AR = libtool -static -o
+  RANLIB = :
+endif
+
+ ifeq ($(HW_OS), macosx_32_64)
+        CC = $(MAC_GCC) -arch i386 -arch x86_64 -isysroot /Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
+        RANLIB = :
+        AR = libtool -static -o
+	SYSLIBS = -framework CoreFoundation -framework IOKit -framework System
+  endif
+  
+    ifeq ($(HW_OS), macosx_64)
+  		 ifeq ($(MAC_OS_SDK), MacOSX10.6.sdk)
+    		CC = $(MAC_GCC) -arch x86_64 -isysroot /Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
+       else
+     		CC = $(MAC_GCC) -arch x86_64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
+       endif
+        RANLIB = :
+        AR = libtool -static -o
+		SYSLIBS = -framework CoreFoundation -framework IOKit -framework System
+    endif
+
 
 ifeq ($(HW_OS), pc_linux_arm)
   CC = arm-linux-gcc
@@ -224,7 +291,7 @@ qxform : testapps/qxform.c
 	$(CC) -o $(HW_OS)/$@ $(CFLAGS) $(LDFLAGS) testapps/$@.c -lquat -lm
 
 #
-# qmat- matrix to quaternion 
+# qmat- matrix to quaternion
 #
 qmat : qmat.c
 	$(CC) -o $(HW_OS)/$@ $(CFLAGS) $(LDFLAGS) testapps/$@.c -lquat -lm
@@ -247,7 +314,7 @@ oglmult : oglmult.c
 #
 #############################################################################
 
-QUAT_INCLUDES = quat.h 
+QUAT_INCLUDES = quat.h
 QUAT_C_FILES = quat.c matrix.c vector.c xyzquat.c
 QUAT_OBJ_FILES = $(QUAT_C_FILES:.c=.o)
 

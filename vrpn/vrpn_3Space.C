@@ -1,27 +1,14 @@
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <ctype.h>
+#include <ctype.h>                      // for isprint
+#include <math.h>                       // for sqrt
+#include <stdio.h>                      // for fprintf, stderr, perror, etc
 
-#ifdef linux
-#include <termios.h>
-#endif
-
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#endif
-
-#include "vrpn_Tracker.h"
+#include "quat.h"                       // for Q_W, Q_X, Q_Y, Q_Z
 #include "vrpn_3Space.h"
-#include "vrpn_Serial.h"
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_ERROR, etc
+#include "vrpn_Serial.h"                // for vrpn_write_characters, etc
+#include "vrpn_Shared.h"                // for vrpn_SleepMsecs, etc
+#include "vrpn_Tracker.h"               // for vrpn_TRACKER_FAIL, etc
+#include "vrpn_Types.h"                 // for vrpn_int16, vrpn_float64
 
 // This constant turns the tracker binary values in the range -32768 to
 // 32768 to meters.
@@ -33,7 +20,6 @@
 
 void vrpn_Tracker_3Space::reset()
 {
-   static int numResets = 0;	// How many resets have we tried?
    int i,resetLen,ret;
    unsigned char reset[10];
 
@@ -44,27 +30,27 @@ void vrpn_Tracker_3Space::reset()
    // a query mode if it is in one.  These additions are cumulative: by the
    // end, we're doing them all.
    resetLen = 0;
-   numResets++;		  	// We're trying another reset
-   if (numResets > 1) {	// Try to get it out of a query loop if its in one
+   d_numResets++;		  	// We're trying another reset
+   if (d_numResets > 1) {	// Try to get it out of a query loop if its in one
    	reset[resetLen++] = (char) (13); // Return key -> get ready
    }
-   if (numResets > 7) {
+   if (d_numResets > 7) {
 	reset[resetLen++] = 'Y'; // Put tracker into tracking (not point) mode
    }
-   if (numResets > 3) {	// Get a little more aggressive
-   	if (numResets > 4) { // Even more aggressive
+   if (d_numResets > 3) {	// Get a little more aggressive
+   	if (d_numResets > 4) { // Even more aggressive
       	reset[resetLen++] = 't'; // Toggle extended mode (in case it is on)
    }
    reset[resetLen++] = 'W'; // Reset to factory defaults
    reset[resetLen++] = (char) (11); // Ctrl + k --> Burn settings into EPROM
    }
    reset[resetLen++] = (char) (25); // Ctrl + Y -> reset the tracker
-   send_text_message("Resetting", timestamp, vrpn_TEXT_ERROR, numResets);
+   send_text_message("Resetting", timestamp, vrpn_TEXT_ERROR, d_numResets);
    for (i = 0; i < resetLen; i++) {
 	if (vrpn_write_characters(serial_fd, &reset[i], 1) == 1) {
 		vrpn_SleepMsecs(1000*2);  // Wait 2 seconds each character
    	} else {
-		send_text_message("Failed writing to tracker", timestamp, vrpn_TEXT_ERROR, numResets);
+		send_text_message("Failed writing to tracker", timestamp, vrpn_TEXT_ERROR, d_numResets);
 		perror("3Space: Failed writing to tracker");
 		status = vrpn_TRACKER_FAIL;
 		return;
@@ -120,7 +106,7 @@ void vrpn_Tracker_3Space::reset()
      return;
    } else {
      send_text_message("Got status (tracker back up)!", timestamp, vrpn_TEXT_ERROR, 0);
-     numResets = 0; 	// Success, use simple reset next time
+     d_numResets = 0; 	// Success, use simple reset next time
    }
 
    // Set output format to be position,quaternion
@@ -201,7 +187,7 @@ int vrpn_Tracker_3Space::get_report(void)
 	unsigned char decode[17];
 	int i;
 
-	static unsigned char mask[8] = {0x01, 0x02, 0x04, 0x08,
+	const unsigned char mask[8] = {0x01, 0x02, 0x04, 0x08,
 					0x10, 0x20, 0x40, 0x80 };
 	// Clear the MSB in the first byte
 	buffer[0] &= 0x7F;
@@ -246,18 +232,19 @@ int vrpn_Tracker_3Space::get_report(void)
 	d_sensor = decode[1] - '1';
 
 	// Position
-	for (i=0; i<3; i++) {
-		pos[i] = (* (short*)(&decode[3+2*i])) * T_3_BINARY_TO_METERS;
-	}
+	unsigned char * unbufPtr = &decode[3];
+	pos[0] = vrpn_unbuffer_from_little_endian<vrpn_int16>(unbufPtr) * T_3_BINARY_TO_METERS;
+	pos[1] = vrpn_unbuffer_from_little_endian<vrpn_int16>(unbufPtr) * T_3_BINARY_TO_METERS;
+	pos[2] = vrpn_unbuffer_from_little_endian<vrpn_int16>(unbufPtr) * T_3_BINARY_TO_METERS;
 
 	// Quarternion orientation.  The 3Space gives quaternions
 	// as w,x,y,z while the VR code handles them as x,y,z,w,
 	// so we need to switch the order when decoding.  Also the
 	// tracker does not normalize the quaternions.
-	d_quat[3] = (* (short*)(&decode[9]));
-	for (i=0; i<3; i++) {
-		d_quat[i] = (* (short*)(&decode[11+2*i]));
-	}
+	d_quat[Q_W] = vrpn_unbuffer_from_little_endian<vrpn_int16>(unbufPtr);
+	d_quat[Q_X] = vrpn_unbuffer_from_little_endian<vrpn_int16>(unbufPtr);
+	d_quat[Q_Y] = vrpn_unbuffer_from_little_endian<vrpn_int16>(unbufPtr);
+	d_quat[Q_Z] = vrpn_unbuffer_from_little_endian<vrpn_int16>(unbufPtr);
 
 	//Normalize quaternion
 	double norm = sqrt (  d_quat[0]*d_quat[0] + d_quat[1]*d_quat[1]

@@ -10,11 +10,18 @@
 //	locations for effects.
 //
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <vrpn_ForceDevice.h>
-#include <vrpn_Tracker.h>
-#include <vrpn_Button.h>
+#include <math.h>                       // for fabs, sqrt
+#include <stdio.h>                      // for printf, NULL
+#include <stdlib.h>                     // for exit
+#include <vrpn_Shared.h>                // for vrpn_gettimeofday
+#include <vrpn_Button.h>                // for vrpn_Button_Remote, etc
+#include <vrpn_ForceDevice.h>           // for vrpn_ForceDevice_Remote, etc
+#include <vrpn_Tracker.h>               // for vrpn_TRACKERCB, etc
+
+#include "vrpn_Configure.h"             // for VRPN_CALLBACK
+#include "vrpn_Connection.h"            // for vrpn_Connection
+#include "vrpn_Shared.h"                // for timeval, vrpn_TimevalDiff, etc
+#include "vrpn_Types.h"                 // for vrpn_float32, vrpn_int32, etc
 
 /*****************************************************************************
  *
@@ -28,7 +35,7 @@ typedef	enum { box, pointconstraint, lineconstraint, planeconstraint, forcefield
 // Which Object ID for the cube geometry object
 vrpn_int32  CUBE_ID = 0;
 
-// For the display of the box, this holds a descripton of the paramters
+// For the display of the box, this holds a description of the parameters
 // for each side.
 class BoxSide {
 public:
@@ -119,12 +126,11 @@ static	float g_forceFieldRadius = (float)0.3;
  *
  *****************************************************************************/
 
-void    VRPN_CALLBACK handle_force_change(void *userdata, const vrpn_FORCECB f)
+void    VRPN_CALLBACK handle_force_change(void *, const vrpn_FORCECB f)
 {
   static vrpn_FORCECB lr;        // last report
   static int first_report_done = 0;
 
-  /*XXX
   if ((!first_report_done) ||
     ((f.force[0] != lr.force[0]) || (f.force[1] != lr.force[1])
       || (f.force[2] != lr.force[2]))) {
@@ -133,11 +139,10 @@ void    VRPN_CALLBACK handle_force_change(void *userdata, const vrpn_FORCECB f)
 
   first_report_done = 1;
   lr = f;
-  XXX*/
 }
 
 
-void    VRPN_CALLBACK handle_tracker_change(void *userdata, const vrpn_TRACKERCB t)
+void    VRPN_CALLBACK handle_tracker_change(void *, const vrpn_TRACKERCB t)
 {
   // Record the current position of the device in global variables
   // so that the button routine can know where to store the center
@@ -223,7 +228,7 @@ void    VRPN_CALLBACK handle_tracker_change(void *userdata, const vrpn_TRACKERCB
 	// surface parameters.  We raise the multiplier to the power of
 	// the box-description multiplier and then apply this to the surface
 	// parameter to vary each for different sides.  A box parameter of
-	// 0 will therefore cause no change (multiply by one), a paramter of
+	// 0 will therefore cause no change (multiply by one), a parameter of
 	// -1 will reduce by the factor and a parameter of 1 will increase
 	// by the parameter.  NOTE: Static and dynamic friction are set equal.
 	g_forceDevice->set_plane(a, b, c, d);
@@ -322,7 +327,7 @@ void    VRPN_CALLBACK handle_tracker_change(void *userdata, const vrpn_TRACKERCB
 	// 1/4 second.
 	{ static  struct timeval  last_sent = {0,0};
 	  struct  timeval now;
-	  gettimeofday(&now, NULL);
+	  vrpn_gettimeofday(&now, NULL);
 	  if (vrpn_TimevalMsecs(vrpn_TimevalDiff(now, last_sent)) < 500) { break; }
 	  last_sent = now;
 	}
@@ -373,7 +378,6 @@ void    VRPN_CALLBACK handle_tracker_change(void *userdata, const vrpn_TRACKERCB
 	  break;
 	}
 
-	vrpn_float32  center[3] = { g_xCenter, g_yCenter, g_zCenter };
 	const vrpn_float32  halfwidth = static_cast<vrpn_float32>(0.02);
 	vrpn_float32  left = g_xCenter - halfwidth;
 	vrpn_float32  right = g_xCenter + halfwidth;
@@ -436,7 +440,7 @@ void    VRPN_CALLBACK handle_tracker_change(void *userdata, const vrpn_TRACKERCB
   };
 }
 
-void	VRPN_CALLBACK handle_button_change(void *userdata, const vrpn_BUTTONCB b)
+void	VRPN_CALLBACK handle_button_change(void *, const vrpn_BUTTONCB b)
 {
   // When the button is pressed, start things going for the state
   // we are in and tell that the forces are active.

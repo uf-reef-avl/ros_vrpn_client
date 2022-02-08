@@ -9,13 +9,13 @@
 #ifndef VRPN_RAW_SGIBOX
 #define VRPN_RAW_SGIBOX
 
+#include "vrpn_Configure.h"             // for VRPN_API
+
 #include "vrpn_Analog.h"
 #include "vrpn_Dial.h"
 #include "vrpn_Button.h"
-#ifndef _WIN32 
-#include <netinet/in.h>
-#include <sys/ioctl.h>
-#endif
+
+class VRPN_API vrpn_Connection;
 
 /* Number of buttons and number of dials on sgi button/dial boxes */
 #define vrpn_SGI_NUM_BUTTONS (32)
@@ -37,13 +37,10 @@ protected:
 	  unsigned char command);
   
 private:
-  int	serialfd;		// Serial port that has been opened
-  unsigned long btstat;           /* status of of on/off buttons */
-  unsigned long bs1, bs2;         /* status of all buttons */
-  short   vals1[vrpn_SGI_NUMDEVS];	// Value array?
-  int	dial_changed[vrpn_SGI_NUM_DIALS];
-  int	mid_values[vrpn_SGI_NUM_DIALS];	  //< Used to perform clamping
-  int	last_values[vrpn_SGI_NUM_DIALS];	  //< Used by dial reporting code
+  int	serialfd;                         // Serial port that has been opened
+  int	mid_values[vrpn_SGI_NUM_DIALS];   //< Used to perform clamping
+  int	last_values[vrpn_SGI_NUM_DIALS];  //< Used by dial reporting code
 };
 
 #endif  // VRPN_RAW_SGIBOX
+

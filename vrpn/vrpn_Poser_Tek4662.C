@@ -1,27 +1,13 @@
-#ifndef _WIN32_WCE
-#include <time.h>
-#endif
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#ifndef	_WIN32_WCE
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#endif
-#include <ctype.h>
+#include <math.h>                       // for floor
+#include <stdio.h>                      // for fprintf, stderr, NULL
+#include <string.h>                     // for strlen, memcpy
 
-#ifdef linux
-#include <termios.h>
-#endif
-
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_ERROR
+#include "vrpn_Connection.h"            // for vrpn_HANDLERPARAM, etc
 // Include vrpn_Shared.h _first_ to avoid conflicts with sys/time.h 
 // and unistd.h
-#include "vrpn_Shared.h"
-#ifndef _WIN32
-#include <netinet/in.h>
-#endif
+#include "vrpn_Shared.h"                // for timeval, vrpn_unbuffer, etc
+#include "vrpn_Types.h"                 // for vrpn_float64, vrpn_uint16
 
 #ifdef	_WIN32
 #ifndef _WIN32_WCE
@@ -46,7 +32,7 @@ const double VELOCITY= (1/0.06144) * (1/0.00254); // Meters per second
 
 // Constants used as characters to communicate to the plotter
 const unsigned char ESC = 27;
-const unsigned char BELL = '7';
+//const unsigned char BELL = '7';
 const unsigned char DEVICE = 'A';
 const unsigned char GS = 29;	  //< Puts the plotter into graphics mode
 const unsigned char ZERO = 0;
@@ -58,16 +44,10 @@ const unsigned char MOVE_TEMPLATE[] = { GS, 0x20, 0x60, 0x60, 0x20, 0x40 };
 const int	    DATA_RECORD_LENGTH = 7;
 
 // Constants used to do bit manipulation
-const unsigned BITFOUR = 1 << 4;
-const unsigned BITFIVE = 1 << 5;
+//const unsigned BITFOUR = 1 << 4;
+//const unsigned BITFIVE = 1 << 5;
 const unsigned LOWFIVEBITS = 0x001f;
 const unsigned LOWTWOBITS = 0x0003;
-
-static	unsigned long	duration(struct timeval t1, struct timeval t2)
-{
-	return (t1.tv_usec - t2.tv_usec) +
-	       1000000L * (t1.tv_sec - t2.tv_sec);
-}
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Server Code
@@ -189,21 +169,22 @@ void vrpn_Poser_Tek4662::reset()
   // then a "Plotter on", then a "Reset" to the plotter.
   vrpn_flush_output_buffer( d_serial_fd );
   vrpn_write_characters( d_serial_fd, ZEROES, sizeof(ZEROES) );
-  vrpn_write_characters( d_serial_fd, PLOTTER_ON, strlen((char*)PLOTTER_ON) );
-  vrpn_write_characters( d_serial_fd, RESET, strlen((char*)RESET) );
+  vrpn_write_characters( d_serial_fd, PLOTTER_ON, strlen((const char*)PLOTTER_ON) );
+  vrpn_write_characters( d_serial_fd, RESET, strlen((const char*)RESET) );
   vrpn_drain_output_buffer( d_serial_fd );
 
   // Request a position message from the plotter and then wait
   // until it responds.  Make sure we get a good response.  If
   // so, then send a Tracker message with the specified position
   // and go into SYNCING mode.  If not, then reset again.
-  vrpn_write_characters( d_serial_fd, GIN, strlen((char*)GIN) );
+  vrpn_write_characters( d_serial_fd, GIN, strlen((const char*)GIN) );
   vrpn_drain_output_buffer( d_serial_fd );
   unsigned  char  inbuf[DATA_RECORD_LENGTH];
   struct timeval wait_time = { 1, 0 };
   int bufcount = vrpn_read_available_characters( d_serial_fd, inbuf, sizeof(inbuf), &wait_time);
   if (bufcount != sizeof(inbuf)) {
-    fprintf(stderr,"vrpn_Poser_Tek4662::reset(): Expected %d characters, got %d\n", sizeof(inbuf), bufcount);
+    fprintf(stderr,"vrpn_Poser_Tek4662::reset(): Expected %d characters, got %d\n",
+	static_cast<int>(sizeof(inbuf)), bufcount);
   } else {
     // Parse the input to find our position and store it in the tracker
     // position.
@@ -272,7 +253,7 @@ void vrpn_Poser_Tek4662::run()
     // Intermediate X bits into lower-order bits
     MOVE[5] |= (x_int >> 2) & LOWFIVEBITS;
     vrpn_write_characters(d_serial_fd, MOVE, sizeof(MOVE));
-    vrpn_write_characters(d_serial_fd, GIN, strlen((char*)GIN) );
+    vrpn_write_characters(d_serial_fd, GIN, strlen((const char*)GIN) );
 
     // Record the fact that we're moving so that we won't send a new
     // command until the move completes.
@@ -354,10 +335,10 @@ void vrpn_Poser_Tek4662::run()
 
   if ((d_outstanding_requests == 0) && !d_new_location_requested) {
     vrpn_gettimeofday(&now, NULL);
-    if (duration(now, timestamp) > 250000L) {
+    if (vrpn_TimevalDuration(now, timestamp) > 250000L) {
       // Record the fact that we're asking so that we won't send a new
       // command until the response completes.
-      vrpn_write_characters(d_serial_fd, GIN, strlen((char*)GIN) );
+      vrpn_write_characters(d_serial_fd, GIN, strlen((const char*)GIN) );
       d_outstanding_requests++;
     }
   }
@@ -366,7 +347,7 @@ void vrpn_Poser_Tek4662::run()
   // die on us in the middle of a move.  If we don't hear from it for 5 seconds,
   // reset it.
   vrpn_gettimeofday(&now, NULL);
-  if (duration(now, timestamp) > 5000000L) {
+  if (vrpn_TimevalDuration(now, timestamp) > 5000000L) {
     send_text_message("vrpn_Poser_Tek4662: Device timeout (resetting)", now, vrpn_TEXT_ERROR);
     status = vrpn_Poser_Tek4662_RESETTING;
     return;
@@ -410,7 +391,7 @@ int vrpn_Poser_Tek4662::handle_change_message(void* userdata,
     if (p.payload_len != (7 * sizeof(vrpn_float64)) ) {
 	    fprintf(stderr,"vrpn_Poser_Server: change message payload error\n");
 	    fprintf(stderr,"             (got %d, expected %d)\n",
-		    p.payload_len, 7 * sizeof(vrpn_float64) );
+		    p.payload_len, static_cast<int>(7 * sizeof(vrpn_float64)) );
 	    return -1;
     }
     me->p_timestamp = p.msg_time;
@@ -449,7 +430,7 @@ int vrpn_Poser_Tek4662::handle_vel_change_message(void* userdata,
     if (p.payload_len != (8 * sizeof(vrpn_float64)) ) {
 	    fprintf(stderr,"vrpn_Poser_Server: velocity message payload error\n");
 	    fprintf(stderr,"             (got %d, expected %d)\n",
-		    p.payload_len, 8 * sizeof(vrpn_float64) );
+		    p.payload_len, static_cast<int>(8 * sizeof(vrpn_float64)) );
 	    return -1;
     }
     me->p_timestamp = p.msg_time;

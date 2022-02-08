@@ -1,5 +1,6 @@
 
-#include <string.h>
+#include <stdio.h>                      // for fflush, fprintf, stderr
+#include <string.h>                     // for NULL, strlen, strcpy
 
 #include "vrpn_FunctionGenerator.h"
 
@@ -55,7 +56,10 @@ decode_from( const char** , vrpn_int32& )
 vrpn_FunctionGenerator_function* vrpn_FunctionGenerator_function_NULL::
 clone( ) const
 {
-	return new vrpn_FunctionGenerator_function_NULL();
+  vrpn_FunctionGenerator_function *ret;
+  try { ret = new vrpn_FunctionGenerator_function_NULL(); }
+  catch (...) { return NULL; }
+  return ret;
 }
 
 
@@ -73,40 +77,51 @@ vrpn_FunctionGenerator_function_script::
 vrpn_FunctionGenerator_function_script( )
 : script( NULL )
 {
-	this->script = new char[1];
-	script[0] = '\0';
+  try {
+    this->script = new char[1];
+    script[0] = '\0';
+  } catch (...) {}
 }
 
 
 vrpn_FunctionGenerator_function_script::
 vrpn_FunctionGenerator_function_script( const char* script )
+  : script( NULL )
 {
-	this->script = new char[ strlen( script ) + 1 ];
-	strcpy( this->script, script );
+  try {
+    this->script = new char[strlen(script) + 1];
+    strcpy(this->script, script);
+  } catch (...) {}
 }
 
 
 vrpn_FunctionGenerator_function_script::
 vrpn_FunctionGenerator_function_script( const vrpn_FunctionGenerator_function_script& s )
+  : script(NULL)
 {
-	this->script = new char[ strlen( s.script ) + 1 ];
-	strcpy( this->script, s.script );
+  try {
+    this->script = new char[strlen(s.script) + 1];
+    strcpy(this->script, s.script);
+  } catch (...) {}
 }
 
 
-vrpn_FunctionGenerator_function_script::
-~vrpn_FunctionGenerator_function_script( )
+vrpn_FunctionGenerator_function_script::~vrpn_FunctionGenerator_function_script( )
 {
-	if( script != NULL )
-	{
-		delete [] script;
-		script = NULL;
+	if( script != NULL ) {
+          try {
+            delete[] script;
+          } catch (...) {
+            fprintf(stderr, "vrpn_FunctionGenerator_function_script::~vrpn_FunctionGenerator_function_script(): delete failed\n");
+            return;
+          }
+	  script = NULL;
 	}
 }
 
 vrpn_float32 vrpn_FunctionGenerator_function_script::
 generateValues( vrpn_float32* buf, vrpn_uint32 nValues, vrpn_float32 startTime, 
-			    vrpn_float32 sampleRate, vrpn_FunctionGenerator_channel* channel ) const
+			    vrpn_float32 sampleRate, vrpn_FunctionGenerator_channel* /*channel*/ ) const
 {
 	for( vrpn_uint32 i = 0; i <= nValues - 1; i++ )
 	{
@@ -119,7 +134,7 @@ generateValues( vrpn_float32* buf, vrpn_uint32 nValues, vrpn_float32 startTime,
 vrpn_int32 vrpn_FunctionGenerator_function_script::
 encode_to( char** buf, vrpn_int32& len ) const
 {
-	vrpn_uint32 length = strlen( this->script );
+	vrpn_uint32 length = static_cast<vrpn_uint32>(strlen( this->script ));
 	vrpn_int32 bytes = length + sizeof( vrpn_uint32 );
 	if( len < bytes )
 	{
@@ -167,18 +182,36 @@ decode_from( const char** buf, vrpn_int32& len )
 		return -1;
 	}
 
-	char* newscript = new char[ newlen + 1 ];
+        char* newscript = NULL;
+        try { newscript = new char[newlen + 1]; }
+        catch (...) {
+          fprintf(stderr, "vrpn_FunctionGenerator_function_script:: "
+            "Out of memory.\n");
+          fflush(stderr);
+          return -1;
+        }
 	if( 0 > vrpn_unbuffer( buf, newscript, newlen ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_function_script::decode_from:  "
 				"payload error (couldn't unbuffer).\n" );
-		delete [] newscript;
+                try {
+                  delete[] newscript;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_FunctionGenerator_function_script::decode_from(): delete failed\n");
+                  return -1;
+                }
 		fflush( stderr );
 		return -1;
 	}
 	newscript[newlen] = '\0';
-	if( this->script != NULL )
-		delete [] this->script;
+        if (this->script != NULL) {
+                try {
+                  delete[] this->script;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_FunctionGenerator_function_script::decode_from(): delete failed\n");
+                  return -1;
+                }
+        }
 	this->script = newscript;
 	len -= newlen;
 	return newlen + sizeof( vrpn_uint32 );
@@ -194,20 +227,32 @@ clone( ) const
 char* vrpn_FunctionGenerator_function_script::
 getScript( ) const
 {
-	char* retval = new char[ strlen( this->script ) + 1 ];
-	strcpy( retval, this->script );
-	return retval;
+  char* retval = NULL;
+  try {
+    retval = new char[strlen(this->script) + 1];
+  } catch (...) {
+    return NULL;
+  }
+  if (this->script) { strcpy(retval, this->script); }
+  return retval;
 }
 
 
-vrpn_bool vrpn_FunctionGenerator_function_script::
-setScript( char* script )
+vrpn_bool vrpn_FunctionGenerator_function_script::setScript( char* script )
 {
 	if( script == NULL ) return false;
-	if( this->script != NULL )
-		delete [] this->script;
-	this->script = new char[ strlen( script ) + 1 ];
-	strcpy( this->script, script );
+        if (this->script != NULL) {
+            try {
+              delete[] this->script;
+            } catch (...) {
+              fprintf(stderr, "vrpn_FunctionGenerator_function_script::setScript(): delete failed\n");
+              return false;
+            }
+        }
+        try {
+          this->script = new char[strlen(script) + 1];
+          strcpy(this->script, script);
+        } catch (...) { return false; }
 	return true;
 }
 
@@ -225,7 +270,8 @@ setScript( char* script )
 vrpn_FunctionGenerator_channel::
 vrpn_FunctionGenerator_channel( )
 {
-	function = new vrpn_FunctionGenerator_function_NULL( );
+  try { function = new vrpn_FunctionGenerator_function_NULL; }
+  catch (...) { function = NULL; }
 }
 
 
@@ -236,29 +282,37 @@ vrpn_FunctionGenerator_channel( vrpn_FunctionGenerator_function* function )
 }
 
 
-vrpn_FunctionGenerator_channel::
-~vrpn_FunctionGenerator_channel( )
+vrpn_FunctionGenerator_channel::~vrpn_FunctionGenerator_channel( )
 {
-	delete function;
+    try {
+      delete function;
+    } catch (...) {
+      fprintf(stderr, "vrpn_FunctionGenerator_channel::~vrpn_FunctionGenerator_channel(): delete failed\n");
+      return;
+    }
 }
 
 
-void vrpn_FunctionGenerator_channel::
-setFunction( vrpn_FunctionGenerator_function* function )
+void vrpn_FunctionGenerator_channel::setFunction( vrpn_FunctionGenerator_function* function )
 {
-	delete (this->function);
-	this->function = function->clone();
+    try {
+      delete (this->function);
+    } catch (...) {
+      fprintf(stderr, "vrpn_FunctionGenerator_channel::setFunction(): delete failed\n");
+      return;
+    }
+    this->function = function->clone();
 }
 
 
 vrpn_int32 vrpn_FunctionGenerator_channel::
 encode_to( char** buf, vrpn_int32& len ) const
 {
-	if( len < sizeof( vrpn_FunctionGenerator_function::FunctionCode ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_FunctionGenerator_function::FunctionCode ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_channel::encode_to:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_FunctionGenerator_function::FunctionCode ) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_FunctionGenerator_function::FunctionCode )) );
 		fflush( stderr );
 		return -1;
 	}
@@ -276,11 +330,11 @@ encode_to( char** buf, vrpn_int32& len ) const
 vrpn_int32 vrpn_FunctionGenerator_channel::
 decode_from( const char** buf, vrpn_int32& len )
 {
-	if( len < sizeof( vrpn_FunctionGenerator_function::FunctionCode ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_FunctionGenerator_function::FunctionCode ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_channel::decode_from:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_FunctionGenerator_function::FunctionCode ) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_FunctionGenerator_function::FunctionCode )) );
 		fflush( stderr );
 		return -1;
 	}
@@ -296,16 +350,17 @@ decode_from( const char** buf, vrpn_int32& len )
 	// one of the appropriate type and delete the old one
 	if( myCode != function->getFunctionCode() )
 	{
-		vrpn_FunctionGenerator_function* oldFunc = this->function;
-		vrpn_FunctionGenerator_function::FunctionCode newCode 
+	   vrpn_FunctionGenerator_function* oldFunc = this->function;
+	   vrpn_FunctionGenerator_function::FunctionCode newCode 
 			= vrpn_FunctionGenerator_function::FunctionCode( myCode );
+           try {
 		switch( newCode )
 		{
 		case vrpn_FunctionGenerator_function::FUNCTION_NULL:
-			this->function = new vrpn_FunctionGenerator_function_NULL();
+			this->function = new vrpn_FunctionGenerator_function_NULL;
 			break;
 		case vrpn_FunctionGenerator_function::FUNCTION_SCRIPT:
-			this->function = new vrpn_FunctionGenerator_function_script();
+			this->function = new vrpn_FunctionGenerator_function_script;
 			break;
 		default:
 			fprintf( stderr, "vrpn_FunctionGenerator_channel::decode_from:  "
@@ -313,7 +368,18 @@ decode_from( const char** buf, vrpn_int32& len )
 			fflush( stderr );
 			return -1;
 		}
-		delete oldFunc;
+            } catch (...) {
+              fprintf(stderr, "vrpn_FunctionGenerator_channel::decode_from:  "
+                "Out of memory.\n");
+              fflush(stderr);
+              return -1;
+            }
+            try {
+              delete oldFunc;
+            } catch (...) {
+              fprintf(stderr, "vrpn_FunctionGenerator_channel::decode_from(): delete failed\n");
+              return -1;
+            }
 	}
 	return this->function->decode_from( buf, len );
 }
@@ -337,27 +403,33 @@ vrpn_FunctionGenerator( const char* name, vrpn_Connection * c )
 {
 	vrpn_BaseClass::init( );
 
-	for( int i = 0; i <= vrpn_FUNCTION_CHANNELS_MAX - 1; i++ )
+	unsigned i;
+	for( i = 0; i <= vrpn_FUNCTION_CHANNELS_MAX - 1; i++ )
 	{
-		channels[i] = new vrpn_FunctionGenerator_channel( );
+          channels[i] = new vrpn_FunctionGenerator_channel;
 	}
 }
 
 
-vrpn_FunctionGenerator::
-~vrpn_FunctionGenerator( )
+vrpn_FunctionGenerator::~vrpn_FunctionGenerator( )
 {
-	for( int i = 0; i <= vrpn_FUNCTION_CHANNELS_MAX - 1; i++ )
+	unsigned i;
+	for( i = 0; i <= vrpn_FUNCTION_CHANNELS_MAX - 1; i++ )
 	{
-		 delete channels[i];
+          try {
+            delete channels[i];
+          } catch (...) {
+            fprintf(stderr, "vrpn_FunctionGenerator::~vrpn_FunctionGenerator(): delete failed\n");
+            return;
+          }
 	}
 }
 
 
-const vrpn_FunctionGenerator_channel* const vrpn_FunctionGenerator::
+const vrpn_FunctionGenerator_channel* vrpn_FunctionGenerator::
 getChannel( vrpn_uint32 channelNum )
 {
-	if( channelNum < 0 || channelNum > vrpn_FUNCTION_CHANNELS_MAX - 1 )
+	if( channelNum > vrpn_FUNCTION_CHANNELS_MAX - 1 )
 		return NULL;
 	return channels[channelNum];
 }
@@ -515,7 +587,9 @@ handle_channel_message( void* userdata, vrpn_HANDLERPARAM p )
 	fflush( stdout );
 #endif
 	vrpn_FunctionGenerator_Server* me = (vrpn_FunctionGenerator_Server*) userdata;
-	vrpn_FunctionGenerator_channel* channel = new vrpn_FunctionGenerator_channel( );
+        vrpn_FunctionGenerator_channel* channel = NULL;
+        try { channel = new vrpn_FunctionGenerator_channel(); }
+        catch (...) { return -1; }
 	vrpn_uint32 channelNum = vrpn_FUNCTION_CHANNELS_MAX + 1; // an invalid number
 	if( 0 > me->decode_channel( p.buffer, p.payload_len, channelNum, *channel ) )
 	{
@@ -575,7 +649,8 @@ handle_allChannelRequest_message( void* userdata, vrpn_HANDLERPARAM)
 	fflush( stdout );
 #endif
 	vrpn_FunctionGenerator_Server* me = (vrpn_FunctionGenerator_Server*) userdata;
-	for( int i = 0; i < vrpn_FUNCTION_CHANNELS_MAX; i++ )
+	unsigned i;
+	for( i = 0; i < vrpn_FUNCTION_CHANNELS_MAX; i++ )
 	{
 		// XXX will this work as-is, or do we need to
 		// force buffers to be flushed periodically?
@@ -638,7 +713,7 @@ handle_sample_rate_message( void* userdata, vrpn_HANDLERPARAM p )
 
 //static 
 int VRPN_CALLBACK vrpn_FunctionGenerator_Server::
-handle_interpreter_request_message( void* userdata, vrpn_HANDLERPARAM p )
+handle_interpreter_request_message( void* userdata, vrpn_HANDLERPARAM /*p*/)
 {
 #ifdef DEBUG_VRPN_FUNCTION_GENERATOR
 	fprintf( stdout, "FG::handle_interpreter_request_message\n" );
@@ -1485,14 +1560,14 @@ encode_channel( char** buf, vrpn_int32& len, const vrpn_uint32 channelNum,
 		fflush( stderr );
 		return -1;
 	}
-	if( len < sizeof( vrpn_uint32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_uint32 ) )
 	{
 		// the channel's encode_to function will check that the length is
 		// sufficient for the channel's info, so just check that we can
 		// at least encode the channel number.
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::encode_channel:  "
-				"couldn't buffer (got %d, wanted at least %d).\n", 
-				len, sizeof( vrpn_int32) );
+				"couldn't buffer (got %d, wanted at least %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_int32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1522,14 +1597,14 @@ decode_channel( const char* buf, const vrpn_int32 len, vrpn_uint32& channelNum,
 	fprintf( stdout, "FG::decode_channel\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_uint32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_uint32 ) )
 	{
 		// the channel's decode_from function will check that the length is
 		// sufficient for the channel's info, so just check that we can
 		// at least decode the channel number.
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::decode_channel:  "
-				"channel message payload error (got %d, wanted at least %d).\n", 
-				len, sizeof( vrpn_int32) );
+				"channel message payload error (got %d, wanted at least %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_int32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1571,14 +1646,14 @@ encode_channel_reply( char** buf, vrpn_int32& len, const vrpn_uint32 channelNum 
 		fflush( stderr );
 		return -1;
 	}
-	if( len < sizeof( vrpn_uint32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_uint32 ) )
 	{
 		// the channel's encode_to function will check that the length is
 		// sufficient for the channel's info, so just check that we can
 		// at least encode the channel number.
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::encode_channel_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_uint32) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_uint32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1607,14 +1682,14 @@ decode_channel_reply( const char* buf, const vrpn_int32 len, vrpn_uint32& channe
 	fprintf( stdout, "FG::decode_channel_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_uint32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_uint32 ) )
 	{
 		// the channel's decode_to function will check that the length is
 		// sufficient for the channel's info, so just check that we can
 		// at least decode the channel number.
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::decode_channel_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_uint32) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_uint32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1648,11 +1723,11 @@ encode_channel_request( char** buf, vrpn_int32& len, const vrpn_uint32 channelNu
 	fprintf( stdout, "FG::encode_channel_request\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_uint32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_uint32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::encode_channel_request:  "
-				"channel message payload error (got %d, wanted at least %d).\n", 
-				len, sizeof( vrpn_int32) );
+				"channel message payload error (got %d, wanted at least %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_int32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1660,7 +1735,7 @@ encode_channel_request( char** buf, vrpn_int32& len, const vrpn_uint32 channelNu
 	if( 0 > vrpn_buffer( buf, &mylen, channelNum ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::encode_channel_request:  "
-				"unable to buffer channel", channelNum );
+				"unable to buffer channel %d", channelNum );
 		fflush( stderr );
 		return -1;
 	}
@@ -1676,14 +1751,14 @@ decode_channel_request( const char* buf, const vrpn_int32 len, vrpn_uint32& chan
 	fprintf( stdout, "FG::decode_channel_request\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_uint32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_uint32 ) )
 	{
 		// the channel's encode_to function will check that the length is
 		// sufficient for the channel's info, so just check that we can
 		// at least encode the channel number.
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::decode_channel_request:  "
-				"channel message payload error (got %d, wanted at least %d).\n", 
-				len, sizeof( vrpn_int32) );
+				"channel message payload error (got %d, wanted at least %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_int32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1691,7 +1766,7 @@ decode_channel_request( const char* buf, const vrpn_int32 len, vrpn_uint32& chan
 	if( 0 > vrpn_unbuffer( &mybuf, &channelNum ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::decode_channel_request:  "
-				"unable to unbuffer channel", channelNum );
+				"unable to unbuffer channel %d", channelNum );
 		fflush( stderr );
 		return -1;
 	}
@@ -1706,11 +1781,11 @@ encode_sampleRate_request( char** buf, vrpn_int32& len, const vrpn_float32 sampl
 	fprintf( stdout, "FG::encode_sampleRate_request\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_float32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_float32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::encode_sampleRate_request:  "
-				"channel message payload error (got %d, wanted at least %d).\n", 
-				len, sizeof( vrpn_float32) );
+				"channel message payload error (got %d, wanted at least %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_float32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1734,11 +1809,11 @@ decode_sampleRate_request( const char* buf, const vrpn_int32 len, vrpn_float32& 
 	fprintf( stdout, "FG::decode_sampleRate_request\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_float32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_float32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::decode_sampleRate_request:  "
-				"channel message payload error (got %d, wanted at least %d).\n", 
-				len, sizeof( vrpn_float32) );
+				"channel message payload error (got %d, wanted at least %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_float32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1761,11 +1836,11 @@ encode_start_reply( char** buf, vrpn_int32& len, const vrpn_bool isStarted )
 	fprintf( stdout, "FG::encode_start_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_bool ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_bool ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::encode_start_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_bool) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_bool)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1780,11 +1855,11 @@ decode_start_reply( const char* buf, const vrpn_int32 len, vrpn_bool& isStarted 
 	fprintf( stdout, "FG::decode_start_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_bool ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_bool ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::decode_start_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_bool) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_bool)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1807,11 +1882,11 @@ encode_stop_reply( char** buf, vrpn_int32& len, const vrpn_bool isStopped )
 	fprintf( stdout, "FG::encode_stop_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_bool ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_bool ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::encode_stop_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_bool) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_bool)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1826,11 +1901,11 @@ decode_stop_reply( const char* buf, const vrpn_int32 len, vrpn_bool& isStopped )
 	fprintf( stdout, "FG::decode_stop_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_bool ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_bool ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::decode_stop_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_bool) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_bool)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1852,11 +1927,11 @@ encode_sampleRate_reply( char** buf, vrpn_int32& len, const vrpn_float32 sampleR
 	fprintf( stdout, "FG::encode_sampleRate_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_float32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_float32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::encode_sampleRate_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_float32) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_float32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1871,11 +1946,11 @@ decode_sampleRate_reply( const char* buf, const vrpn_int32 len )
 	fprintf( stdout, "FG::decode_sampleRate_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_float32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_float32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::decode_sampleRate_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( vrpn_float32) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_float32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1899,12 +1974,12 @@ encode_interpreterDescription_reply( char** buf, vrpn_int32& len, const char* de
 	fprintf( stdout, "FG::encode_interpreterDescription_reply\n" );
 	fflush( stdout );
 #endif
-	vrpn_int32 dlength = strlen( desc );
+	vrpn_int32 dlength = static_cast<vrpn_int32>(strlen( desc ));
 	if( len < dlength + (vrpn_int32) sizeof( vrpn_int32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::encode_interpreterDescription_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, dlength + sizeof( vrpn_int32 ) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, dlength + static_cast<unsigned long>(sizeof( vrpn_int32 )) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1927,11 +2002,11 @@ decode_interpreterDescription_reply( const char* buf, const vrpn_int32 len, char
 	fprintf( stdout, "FG::decode_interpreterDescription_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( vrpn_int32 ) )
+	if( static_cast<unsigned>(len) < sizeof( vrpn_int32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::decode_interpreterDescription_reply:  "
-				"insufficient buffer space given (got %d, wanted at least %d).\n", 
-				len, sizeof( vrpn_int32) );
+				"insufficient buffer space given (got %d, wanted at least %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( vrpn_int32)) );
 		fflush( stderr );
 		return -1;
 	}
@@ -1943,7 +2018,13 @@ decode_interpreterDescription_reply( const char* buf, const vrpn_int32 len, char
 		fflush( stderr );
 		return -1;
 	}
-	*desc = new char[ dlength + 1 ];
+        try { *desc = new char[dlength + 1]; }
+        catch (...) {
+          fprintf(stderr, "vrpn_FunctionGenerator_Remote::decode_interpreterDescription_reply:  "
+            "Out of memory.\n");
+          fflush(stderr);
+          return -1;
+        }
 	int retval = vrpn_unbuffer( &buf, *desc, dlength );
 	(*desc)[dlength] = '\0';
 	return retval;
@@ -1957,16 +2038,16 @@ encode_error_report( char** buf, vrpn_int32& len, const FGError error, const vrp
 	fprintf( stdout, "FG::encode_error_report\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( FGError ) + sizeof( vrpn_int32 ) )
+	if( static_cast<unsigned>(len) < sizeof( FGError ) + sizeof( vrpn_int32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::encode_error_report:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( FGError) + sizeof( vrpn_int32 ) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( FGError) + sizeof( vrpn_int32 )) );
 		fflush( stderr );
 		return -1;
 	}
 	vrpn_int32 mylen = len;
-	if( 0 > vrpn_buffer( buf, &mylen, sampleRate ) || 0 > vrpn_buffer( buf, &mylen, channel ) )
+	if( 0 > vrpn_buffer( buf, &mylen, error ) || 0 > vrpn_buffer( buf, &mylen, channel ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Server::encode_error_report:  "
 				"unable to buffer error & channel" );
@@ -1985,11 +2066,11 @@ decode_error_reply( const char* buf, const vrpn_int32 len, FGError& error, vrpn_
 	fprintf( stdout, "FG::decode_error_reply\n" );
 	fflush( stdout );
 #endif
-	if( len < sizeof( FGError ) + sizeof( vrpn_int32 ) )
+	if( static_cast<unsigned>(len) < sizeof( FGError ) + sizeof( vrpn_int32 ) )
 	{
 		fprintf( stderr, "vrpn_FunctionGenerator_Remote::decode_error_reply:  "
-				"insufficient buffer space given (got %d, wanted %d).\n", 
-				len, sizeof( FGError) + sizeof( vrpn_int32 ) );
+				"insufficient buffer space given (got %d, wanted %lud).\n", 
+				len, static_cast<unsigned long>(sizeof( FGError) + sizeof( vrpn_int32 )) );
 		fflush( stderr );
 		return -1;
 	}

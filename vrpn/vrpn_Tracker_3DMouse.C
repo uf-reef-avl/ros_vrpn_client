@@ -1,23 +1,24 @@
-#include <ctype.h>
+#include <ctype.h>                      // for isprint
+#include <math.h>                       // for cos, sin
+#include <stdio.h>                      // for fprintf, stderr, perror
 
-#ifndef _WIN32
-#include <unistd.h>
-#else
-#define M_PI 3.14159265358979323846
-#endif
-
+#include "vrpn_Serial.h"                // for vrpn_write_characters, etc
+#include "vrpn_Shared.h"                // for vrpn_SleepMsecs, timeval
 #include "vrpn_Tracker_3DMouse.h"
+#include "vrpn_Types.h"                 // for vrpn_float64
+
+class VRPN_API vrpn_Connection;
 
 // max time between reports (usec)
 #define MAX_TIME_INTERVAL       (2000000) 
-#define	INCHES_TO_METERS	(2.54/100.0)
 
 vrpn_Tracker_3DMouse::vrpn_Tracker_3DMouse(const char *name, vrpn_Connection *c, 
 		      const char *port, long baud, int filtering_count):
     vrpn_Tracker_Serial(name, c, port, baud),
-    vrpn_Button(name, c),
+    vrpn_Button_Filter(name, c),
     _filtering_count(filtering_count),
-    _numbuttons(5)
+    _numbuttons(5),
+    _count(0)
 {
 	vrpn_Button::num_buttons = _numbuttons;
 	clear_values();
@@ -36,15 +37,12 @@ vrpn_Tracker_3DMouse::~vrpn_Tracker_3DMouse()
 
 void vrpn_Tracker_3DMouse::reset()
 {
-	static int numResets = 0;	// How many resets have we tried?
 	int ret, i;
-
-	numResets++;		  	// We're trying another reset
 
 	clear_values();
 
-	fprintf(stderr, "Resetting the 3DMouse (attempt %d)\n", numResets);
-	if (vrpn_write_characters(serial_fd, (unsigned char*)"*R", 2) == 2)
+	fprintf(stderr, "Resetting the 3DMouse...\n");
+	if (vrpn_write_characters(serial_fd, (const unsigned char*)"*R", 2) == 2)
 	{
 		fprintf(stderr,".");
 		vrpn_SleepMsecs(1000.0*2);  // Wait after each character to give it time to respond
@@ -165,7 +163,6 @@ void vrpn_Tracker_3DMouse::reset()
 	else
 	{
 		fprintf(stderr, "3DMouse gives status (this is good)\n");
-		numResets = 0; 	// Success, use simple reset next time
 	}
 
 	// Set filtering count if the constructor parameter said to.
@@ -204,9 +201,9 @@ bool vrpn_Tracker_3DMouse::set_filtering_count(int count)
 int vrpn_Tracker_3DMouse::get_report(void)
 {
    int ret;		// Return value from function call to be checked
-   static int count = 0;
    timeval waittime;
    waittime.tv_sec = 2;
+   waittime.tv_usec = 0;
 
    if (status == vrpn_TRACKER_SYNCING) {
 	unsigned char tmpc;
@@ -217,7 +214,7 @@ int vrpn_Tracker_3DMouse::get_report(void)
 		status = vrpn_TRACKER_RESETTING;
 		return 0;
 	}
-	ret = vrpn_read_available_characters(serial_fd, _buffer+count, 16-count, &waittime);
+	ret = vrpn_read_available_characters(serial_fd, _buffer+_count, 16-_count, &waittime);
 	if (ret < 0)
 	{
 		perror("  3DMouse read failed (disconnected)");
@@ -225,16 +222,16 @@ int vrpn_Tracker_3DMouse::get_report(void)
 		return 0;
 	}
 
-	count += ret;
-	if (count < 16) return 0;
-	if (count > 16)
+	_count += ret;
+	if (_count < 16) return 0;
+	if (_count > 16)
 	{
 		perror("  3DMouse read failed (wrong message)");
 		status = vrpn_TRACKER_RESETTING;
 		return 0;
 	}
 
-	count = 0;
+	_count = 0;
 	
 	tmpc = _buffer[0];
 	if (tmpc & 32)
@@ -279,9 +276,9 @@ int vrpn_Tracker_3DMouse::get_report(void)
 		y = static_cast<float>(ary / 40.0);		// yaw
 		r = static_cast<float>(arz / 40.0);		// roll
 
-		p = static_cast<float>(p * M_PI / 180);
-		y = static_cast<float>(y * M_PI / 180);
-		r = static_cast<float>((360-r) * M_PI / 180);
+		p = static_cast<float>(p * VRPN_PI / 180);
+		y = static_cast<float>(y * VRPN_PI / 180);
+		r = static_cast<float>((360-r) * VRPN_PI / 180);
 
 		float cosp2 = static_cast<float>(cos(p/2));
 		float cosy2 = static_cast<float>(cos(y/2));

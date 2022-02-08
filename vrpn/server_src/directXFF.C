@@ -5,7 +5,7 @@
 #include "vrpn_DirectXFFJoystick.h"
 #include "vrpn_Tracker_AnalogFly.h"
 
-void	Usage(char *s)
+void	Usage(const char *s)
 {
   fprintf(stderr,"Usage: %s [-warn] [-v]\n",s);
   fprintf(stderr,"       -warn: Only warn on errors (default is to bail)\n");
@@ -14,16 +14,15 @@ void	Usage(char *s)
 }
 
 
-int main (unsigned argc, char *argv[])
+int main (int argc, const char *argv[])
 {
 
 	int	bail_on_error = 1;
 	int	verbose = 0;
 	int	realparams = 0;
-	unsigned int	i;
 	
 	// Parse the command line
-	i = 1;
+	int i = 1;
 	while (i < argc) {
 	if (!strcmp(argv[i], "-warn")) {// Don't bail on errors
 		bail_on_error = 0;
@@ -49,14 +48,12 @@ int main (unsigned argc, char *argv[])
 	}
 #endif
 
-        char handTrackerName[20];
-	strcpy( handTrackerName, "Joystick0" );
+	const char handTrackerName[] = "Joystick0";
 
-	vrpn_Synchronized_Connection	connection;
+	vrpn_Connection * connection = vrpn_create_server_connection();
 	// Create the joystick for analog and buttons
-        vrpn_DirectXFFJoystick *joyServer;
-	joyServer = new vrpn_DirectXFFJoystick((char *) handTrackerName, 
-                                       &connection, 200, 200);
+	vrpn_DirectXFFJoystick *joyServer = new vrpn_DirectXFFJoystick(handTrackerName,
+                                       connection, 200, 200);
         if (joyServer==NULL) {
 	  fprintf(stderr, "Could not create Joystick\n");
           return -1;
@@ -78,7 +75,7 @@ int main (unsigned argc, char *argv[])
 	afp.z = afp.x; afp.z.channel = 6; afp.z.scale = (float)0.2; afp.z.offset = (float)1.5;
 	afp.sz = afp.x; afp.sz.channel = 5; afp.sz.scale = (float)0.06;
 	vrpn_Tracker_AnalogFly *joyflyServer = new vrpn_Tracker_AnalogFly((char*) handTrackerName,
-				&connection, &afp, 200, vrpn_true);
+				connection, &afp, 200, vrpn_true);
         if (joyflyServer==NULL) {
 	  fprintf(stderr, "phantom_init(): Could not create AnalogFly\n");
           return -1;
@@ -100,7 +97,7 @@ int main (unsigned argc, char *argv[])
 	  joyflyServer->mainloop();
 	  
 	  // Send and receive all messages
-	  connection.mainloop();
+	  connection->mainloop();
 	  
 	  // Sleep for a short while to make sure we don't eat the whole CPU
 	  //vrpn_SleepMsecs(1);

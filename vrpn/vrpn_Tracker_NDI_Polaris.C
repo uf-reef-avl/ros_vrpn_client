@@ -1,29 +1,13 @@
 
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <ctype.h>
+#include <stdio.h>                      // for fprintf, printf, sprintf, etc
+#include <string.h>                     // for strncmp, strlen, strncpy
 
-#ifdef linux
-#include <termios.h>
-#endif
-
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#endif
-
-#include "vrpn_Tracker.h"
+#include "vrpn_Connection.h"            // for vrpn_CONNECTION_LOW_LATENCY, etc
+#include "vrpn_Serial.h"                // for vrpn_close_commport, etc
+#include "vrpn_Shared.h"                // for vrpn_SleepMsecs, etc
+#include "vrpn_Tracker.h"               // for vrpn_Tracker
 #include "vrpn_Tracker_NDI_Polaris.h"
-#include "vrpn_Serial.h"
-#include "vrpn_Shared.h"
+#include "vrpn_Types.h"                 // for vrpn_float64
 
 vrpn_Tracker_NDI_Polaris::vrpn_Tracker_NDI_Polaris(const char *name, 
 												   vrpn_Connection *c,
@@ -31,12 +15,9 @@ vrpn_Tracker_NDI_Polaris::vrpn_Tracker_NDI_Polaris(const char *name,
 												   int numOfRigidBodies,
 												   const char** rigidBodyNDIRomFileNames) : vrpn_Tracker(name,c)
 {
-	latestResponseStr=new unsigned char[MAX_NDI_RESPONSE_LENGTH];
-
 	/////////////////////////////////////////////////////////
 	//STEP 1: open com port at NDI's default speed
 	/////////////////////////////////////////////////////////
-	
 	
 	serialFd=vrpn_open_commport(port,9600);
 	if (serialFd==-1){
@@ -74,7 +55,7 @@ vrpn_Tracker_NDI_Polaris::vrpn_Tracker_NDI_Polaris(const char *name,
 #endif
 
 		//0 = 20hz(default), 1= 30Hz, 2=60Hz
-		sendCommand("IRATE 2"); //set the illumination to 60Hz
+		sendCommand("IRATE 0"); //set the illumination to the default
         readResponse();
 #ifdef DEBUG
 		printf("DEBUG: IRATE response: >%s<\n",latestResponseStr);	
@@ -131,12 +112,12 @@ int vrpn_Tracker_NDI_Polaris::get_report(void)
 	readResponse();
 	//printf("DEBUG: TX response: >%s %i<\n",latestResponseStr);
 	
-	int numOfHandles=parse2CharIntFromNDIResponse(latestResponseStr);
+	//int numOfHandles=parse2CharIntFromNDIResponse(latestResponseStr);
 	int TXResponseStrIndex=2;
 	bool gotAtLeastOneReport=false;
 	
 	for (int t=0; t<numOfRigidBodies; t++) {
-		int handleNum=parse2CharIntFromNDIResponse(latestResponseStr,&TXResponseStrIndex);
+		//int handleNum=parse2CharIntFromNDIResponse(latestResponseStr,&TXResponseStrIndex);
 		// check if the tool is present. Parse and print out the transform data if and only if
 		// it's not missing
 		if (strncmp("MISSING",(char *) &latestResponseStr[TXResponseStrIndex],7)!=0) {
@@ -164,9 +145,7 @@ int vrpn_Tracker_NDI_Polaris::get_report(void)
 		
 	}// for  
 	
-	
 	return(gotAtLeastOneReport); //return 1 if something was sent, 0 otherwise
-	
 }
 
 
@@ -196,8 +175,8 @@ void vrpn_Tracker_NDI_Polaris::send_report(void) // called from get_report()
 // WITHOUT CRC checksums
 
 void vrpn_Tracker_NDI_Polaris::sendCommand(const char* commandString ){
-	vrpn_write_characters(serialFd,(unsigned char* )commandString,strlen(commandString));
-	vrpn_write_characters(serialFd,(unsigned char* )"\r",1); //send the CR
+	vrpn_write_characters(serialFd,(const unsigned char* )commandString,strlen(commandString));
+	vrpn_write_characters(serialFd,(const unsigned char* )"\r",1); //send the CR
 	vrpn_flush_output_buffer(serialFd);
 }
 
@@ -239,9 +218,8 @@ int vrpn_Tracker_NDI_Polaris::readResponse(){
 //
 // RETURNS the number of bytes represented in the string (which is half the number of ASCII characters)
 // , or -1 on failure
-int vrpn_Tracker_NDI_Polaris::convertBinaryFileToAsciiEncodedHex(const char* filename, char *asciiEncodedHexStr) {
-	
-	
+int vrpn_Tracker_NDI_Polaris::convertBinaryFileToAsciiEncodedHex(const char* filename, char *asciiEncodedHexStr)
+{
 	FILE* fptr=fopen(filename,"rb");
 	if (fptr==NULL) {
 		fprintf(stderr,"vrpn_Tracker_NDI_Polaris: can't open NDI .rom file %s\n",filename);
@@ -256,22 +234,34 @@ int vrpn_Tracker_NDI_Polaris::convertBinaryFileToAsciiEncodedHex(const char* fil
 	if (fileSizeInBytes>MAX_NDI_ROM_FILE_SIZE_IN_BYTES) {
 		fprintf(stderr,"vrpn_Tracker_NDI_Polaris: file is %ld bytes long - which is larger than expected NDI ROM file size of %d bytes.\n",
 			fileSizeInBytes,MAX_NDI_ROM_FILE_SIZE_IN_BYTES);
+		fclose(fptr);
 		return (-1);
 	}
 	
 	// allocate memory to contain the whole file:
-	unsigned char* rawBytesFromRomFile = (unsigned char*) new unsigned char[fileSizeInBytes];
+        unsigned char* rawBytesFromRomFile;
+        try { rawBytesFromRomFile = new unsigned char[fileSizeInBytes]; }
+        catch (...) {
+          fprintf(stderr, "vrpn_Tracker_NDI_Polaris: Out of memory!\n");
+          fclose(fptr);
+          return(-1);
+        }
 	
 	// copy the file into the buffer:
 	size_t result = fread (rawBytesFromRomFile,1,fileSizeInBytes,fptr);
 	if (result != (unsigned int) fileSizeInBytes) {
 		fprintf(stderr,"vrpn_Tracker_NDI_Polaris: error while reading .rom file!\n");
+                try {
+                  delete [] rawBytesFromRomFile;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_Tracker_NDI_Polaris::convertBinaryFileToAsciiEncodedHex(): delete failed\n");
+                  return -1;
+                }
 		fclose(fptr);
 		return(-1);
 	}
 	fclose(fptr);
-	
-	
+
 	// init array with "_" for debugging
 	for (int i=0; i<MAX_NDI_ROM_FILE_SIZE_IN_BYTES; i++) {
 		asciiEncodedHexStr[i]='_';
@@ -297,7 +287,12 @@ int vrpn_Tracker_NDI_Polaris::convertBinaryFileToAsciiEncodedHex(const char* fil
 	asciiEncodedHexStr[byteIndex*2]='\0'; //end of string marker, which is used just for debugging
 	
 	//printf("DEBUG: >>%s<<\n",asciiEncodedHexStr);
-	delete (rawBytesFromRomFile);
+        try {
+          delete [] rawBytesFromRomFile;
+        } catch (...) {
+          fprintf(stderr, "vrpn_Tracker_NDI_Polaris::convertBinaryFileToAsciiEncodedHex(): delete failed\n");
+          return -1;
+        }
 	
 	return paddedFileSizeInBytes;
 }
@@ -380,8 +375,7 @@ int vrpn_Tracker_NDI_Polaris::setupOneTool(const char* NDIToolRomFilename)
 	int numOfChunks=numOfFileBytes/NDI_ROMFILE_CHUNK_SIZE;
 	for (int chunkIndex=0; chunkIndex<numOfChunks; chunkIndex++) {
 		char chunk[129]; //64*2 +1 for the end of string
-		strncpy(chunk,&(asciiEncodedHex[chunkIndex*NDI_ROMFILE_CHUNK_SIZE*2]),NDI_ROMFILE_CHUNK_SIZE*2);
-		chunk[128]='\0';
+                vrpn_strcpy(chunk,&(asciiEncodedHex[chunkIndex*NDI_ROMFILE_CHUNK_SIZE*2]));
 		
 		int NDIAddress=chunkIndex*NDI_ROMFILE_CHUNK_SIZE; //the memory offset (in the NDI machine, not this PC)
 		// where this chunk will start

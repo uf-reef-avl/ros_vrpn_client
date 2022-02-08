@@ -8,22 +8,25 @@
  *              http://linux.schottelius.org/gpm/
 */
 
-#include <stdio.h>
+#include <stdio.h>                      // for NULL, fprintf, printf, etc
 #include <string.h>
-#ifndef _WIN32
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#endif
 
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_ERROR
 #include "vrpn_Mouse.h"
+#include "vrpn_Serial.h"                // for vrpn_open_commport, etc
 
 #if defined(linux) && defined(VRPN_USE_GPM_MOUSE)
-#include <gpm.h>
+#include <gpm.h>                        // for Gpm_Event, Gpm_Connect, etc
+#endif
+
+
+#if !( defined(_WIN32) && defined(VRPN_USE_WINSOCK_SOCKETS) )
+#  include <sys/select.h>                 // for select, FD_ISSET, FD_SET, etc
 #endif
 
 #ifdef	_WIN32
 #include <windows.h>
+
 #pragma comment (lib, "user32.lib")
 
 // Fix sent in by Andrei State to make this compile under Visual Studio 6.0.
@@ -162,7 +165,7 @@ int vrpn_Mouse::get_report()
     vrpn_Analog::channel[0] = (vrpn_float64)(curPos.x - GetSystemMetrics(SM_XVIRTUALSCREEN)) / GetSystemMetrics(SM_CXVIRTUALSCREEN);
     vrpn_Analog::channel[1] = (vrpn_float64)(curPos.y - GetSystemMetrics(SM_YVIRTUALSCREEN)) / GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-    gettimeofday( &timestamp, NULL );
+    vrpn_gettimeofday( &timestamp, NULL );
     report_changes();
     return 1;
 #else
@@ -202,12 +205,13 @@ vrpn_Button_SerialMouse::vrpn_Button_SerialMouse(const char *name,vrpn_Connectio
     : vrpn_Button_Filter(name, c)
 {
     status = BUTTON_FAIL;
+    printed_error = false;
     // Find out the port name and baud rate;
     if (port == NULL) {
 		fprintf(stderr,"vrpn_Button_SerialMouse: NULL port name\n");
 		return;
     } else {
-		strncpy(portname, port, sizeof(portname));
+		vrpn_strcpy(portname, port);
 		portname[sizeof(portname)-1] = '\0';
     }
     num_buttons = 3;
@@ -246,9 +250,8 @@ void vrpn_Button_SerialMouse::mainloop()
 	    break;
 	case BUTTON_FAIL:
       	{	
-	    static int first = 1;
-	    if (!first)	break;
-	    first = 0;
+	    if (printed_error)	break;
+	    printed_error = true;
 	    send_text_message("vrpn_Button_SerialMouse failure!", timestamp, vrpn_TEXT_ERROR);
         }
       	break;
@@ -324,6 +327,10 @@ void vrpn_Button_SerialMouse::read(void)
 			buttons[0] = (unsigned char)( (buffer & 4)?0:1 );
 			buttons[1] = (unsigned char)( (buffer & 2)?0:1 );
 			buttons[2] = (unsigned char)( (buffer & 1)?0:1 );
+			break;
+				
+		default:
+			printf("vrpn_Button_SerialMouse::read(): Unknown mouse type\n");
 			break;
 		} // switch
     } // while (num) 

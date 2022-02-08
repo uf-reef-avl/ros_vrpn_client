@@ -1,5 +1,5 @@
 /*
-Copyright (C) GLI Interactive LLC 2007. Public domain.
+Copyright (C) Motion Workshop 2014. Public domain.
 
 Permission is hereby granted, free of charge, to any person or organization
 obtaining a copy of the software and accompanying documentation covered by
@@ -33,26 +33,26 @@ DEALINGS IN THE SOFTWARE.
 class VRPN_API vrpn_Tracker_MotionNode : public vrpn_Tracker {
 public:
    vrpn_Tracker_MotionNode(
-     const char * name,
-     vrpn_Connection * c,
+     const char *name,
+     vrpn_Connection *c,
      unsigned num_sensor,
-     const char * address,
+     const char *address,
      unsigned port);
-  ~vrpn_Tracker_MotionNode();
+
+  virtual ~vrpn_Tracker_MotionNode();
 
   virtual void mainloop();
 
 private:
+  /** From the configuration parameters. */
   unsigned m_num_sensor;
-  /**
-    Handle to our MotionNode SDK sampler. Actual type is
-    ::MotionNode::SDK::Device::Sampler<> if not NULL.
-  */
-  void * m_handle;
+
+  /** Opaque pointer to our Motion SDK sampler. */
+  void *m_handle;
 
   void get_report();
   void send_report();
-}; // class MotionNode
+}; // class vrpn_Tracker_MotionNode
 
 #endif // VRPN_USE_MOTIONNODE
 

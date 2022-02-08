@@ -16,12 +16,18 @@
 # Requires these CMake modules:
 #  GetCompilerInfoString
 #
-# Requires CMake 2.6 or newer (uses the 'function' command)
+# Requires CMake 2.6 or newer (uses the 'function' command),
+# as well as FindGit.cmake (included with 2.8.2, may be backported)
 #
 # Original Author:
 # 2009-2010 Ryan Pavlik <rpavlik@iastate.edu> <abiryan@ryand.net>
 # http://academic.cleardefinition.com
 # Iowa State University HCI Graduate Program/VRAC
+#
+# Copyright Iowa State University 2009-2010.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE_1_0.txt or copy at
+# http://www.boost.org/LICENSE_1_0.txt)
 
 # Only do any of the prep work if not already in a dashboard script
 if(NOT IN_DASHBOARD_SCRIPT)
@@ -113,14 +119,21 @@ if(NOT IN_DASHBOARD_SCRIPT)
 
 	if(NOT "1.${CMAKE_VERSION}" VERSION_LESS "1.2.8.0")
 		if(IS_DIRECTORY "${CMAKE_SOURCE_DIRECTORY}/.git")
-			find_program(DASHBOARDSCRIPT_GIT_EXECUTABLE
-				NAMES git)
-			if(DASHBOARDSCRIPT_GIT_EXECUTABLE)
-
+			if(NOT GIT_FOUND)
+				find_package(Git QUIET)
+			endif()
+			# If we have a valid git we found ourselves in older version of the module,
+			# let the regular FindGit module (since 2.8.2) know.
+			if(DASHBOARDSCRIPT_GIT_EXECUTABLE AND EXISTS "${DASHBOARDSCRIPT_GIT_EXECUTABLE}" AND NOT GIT_FOUND)
+				set(GIT_EXECUTABLE "${DASHBOARDSCRIPT_GIT_EXECUTABLE}" CACHE FILEPATH "Git executable" FORCE)
+				find_package(Git QUIET)
+			endif()
+			unset(DASHBOARDSCRIPT_GIT_EXECUTABLE)
+			unset(DASHBOARDSCRIPT_GIT_EXECUTABLE CACHE)
+			if(GIT_FOUND)
 				set(UPDATE_TYPE "git")
-				set(UPDATE_COMMAND "${DASHBOARDSCRIPT_GIT_EXECUTABLE}")
+				set(UPDATE_COMMAND "${GIT_EXECUTABLE}")
 				set(UPDATE_OPTIONS "")
-				mark_as_advanced(DASHBOARDSCRIPT_GIT_EXECUTABLE)
 			endif()
 		endif()
 	endif()
@@ -159,8 +172,14 @@ function(create_dashboard_scripts)
 		else()
 			message(STATUS "You can add these sample lines to your crontab:")
 		endif()
-		
+
 		set(_msg)
+
+		if(NOT DASHBOARDSCRIPT_BUILD_CONFIGURATION)
+			set(DASHBOARDSCRIPT_BUILD_CONFIGURATION "RelWithDebInfo")
+		endif()
+		set(DASHBOARDSCRIPT_BUILD_CONFIGURATION "${DASHBOARDSCRIPT_BUILD_CONFIGURATION}" CACHE STRING "Build configuration to use for dashboard builds by default")
+		mark_as_advanced(DASHBOARDSCRIPT_BUILD_CONFIGURATION)
 
 		foreach(DASHBOARDSCRIPT_DASH_TYPE Nightly Continuous Experimental)
 			# If given a cache template, configure it

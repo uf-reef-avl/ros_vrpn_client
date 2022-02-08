@@ -1,13 +1,12 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
-#include "vrpn_Analog.h"
-#include "vrpn_Analog_Output.h"
+#include <signal.h>                     // for signal, SIGINT
+#include <stdio.h>                      // for printf, fprintf, NULL, etc
+#include <stdlib.h>                     // for exit
 
-#ifndef _WIN32
-#include <strings.h>
-#endif
+#include "vrpn_Analog.h"                // for vrpn_Analog_Remote, etc
+#include "vrpn_Analog_Output.h"         // for vrpn_Analog_Output_Remote
+#include "vrpn_Configure.h"             // for VRPN_CALLBACK
+#include "vrpn_Shared.h"                // for timeval, vrpn_gettimeofday, etc
+#include "vrpn_Types.h"                 // for vrpn_float64
 
 #define POLL_INTERVAL       (2000000)	  // time to poll if no response in a while (usec)
 vrpn_Analog_Remote	  *ana;
@@ -17,12 +16,6 @@ int done = 0;
 
 bool analog_0_set = false;
 vrpn_float64  analog_0;
-
-unsigned long	duration(struct timeval t1, struct timeval t2)
-{
-	return (t1.tv_usec - t2.tv_usec) +
-	       1000000L * (t1.tv_sec - t2.tv_sec);
-}
 
 
 
@@ -108,6 +101,13 @@ int main (int argc, char * argv [])
   // signal handler so logfiles get closed right
   signal(SIGINT, handle_cntl_c);
 
+  // Wait until we hear a value from analog0 so we know where
+  // to start.
+  analog_0_set = false;
+  while (!analog_0_set) {
+    ana->mainloop();
+  }
+
   /* 
    * main interactive loop
    */
@@ -117,7 +117,7 @@ int main (int argc, char * argv [])
     // 10000 steps shorter (if it is more than 10000)
     struct timeval current_time;
     vrpn_gettimeofday(&current_time, NULL);
-    if ( duration(current_time,timestamp) > POLL_INTERVAL) {
+    if ( vrpn_TimevalDuration(current_time,timestamp) > POLL_INTERVAL) {
       if (analog_0_set) {
 	double newval;
 	if (analog_0 > 10000) {

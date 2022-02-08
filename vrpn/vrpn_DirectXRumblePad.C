@@ -13,6 +13,9 @@
 
 #if defined(_WIN32) && defined(VRPN_USE_DIRECTINPUT)
 #include <stdio.h>
+#include <time.h> // for time
+#include <algorithm> // for min
+using std::min;
 
 // Hacks to maintain VC++6 compatibility while preserving 64-bitness
 // Also cleans up the annoying (and in this case meaningless) warnings under Win32
@@ -73,15 +76,19 @@ namespace {
 // - device_guid: If provided, the specific DirectInput device GUID we want to use
 //   If not provided (or the null GUID), we'll bind to the first available joystick
 vrpn_DirectXRumblePad::vrpn_DirectXRumblePad(const char *name, vrpn_Connection *c,
-							   GUID device_guid):
-	vrpn_Analog(name, c),
-	vrpn_Button(name, c),
-    vrpn_Analog_Output(name, c),
-	_target_device(device_guid),
-	_gamepad(NULL),
-	_directInput(NULL),
-	_effect(NULL)
+							   GUID device_guid)
+  : vrpn_Analog(name, c)
+  , vrpn_Button_Filter(name, c)
+  , vrpn_Analog_Output(name, c)
+  , _target_device(device_guid)
+  , _wnd(NULL)
+  , _thread(INVALID_HANDLE_VALUE)
+  , _directInput(NULL)
+  , _effect(NULL)
+  , _gamepad(NULL)
 {
+	last_error = time(NULL);
+
 	vrpn_Analog::num_channel = 12;
 	vrpn_Button::num_buttons = min(128, vrpn_BUTTON_MAX_BUTTONS);
 	vrpn_Analog_Output::o_num_channel = 1;
@@ -353,7 +360,6 @@ BOOL CALLBACK vrpn_DirectXRumblePad::axis_enum_cb(LPCDIDEVICEOBJECTINSTANCE lpdd
 // VRPN main loop
 // Poll the joystick, update the axes, and let the VRPN change notifications fire
 void vrpn_DirectXRumblePad::mainloop() {
-	static time_t last_error = time(NULL);
 	DIJOYSTATE2 js;
 
 	server_mainloop();

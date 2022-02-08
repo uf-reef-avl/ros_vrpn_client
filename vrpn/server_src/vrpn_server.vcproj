@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="vrpn_server"
 	ProjectGUID="{92162D21-8739-4DF2-89AC-7629B294F1C4}"
 	RootNamespace="vrpn_server"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -44,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;../../dtrack;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include&quot;;&quot;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/include&quot;;&quot;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/utilities/include&quot;;../../isense;..;../quat;../../Dtrack;../../libfreespace/include"
+				AdditionalIncludeDirectories="&quot;$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;../../dtrack;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include&quot;;&quot;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/include&quot;;&quot;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/utilities/include&quot;;../../isense;..;../quat;../../Dtrack;../../libfreespace/include;&quot;$(SYSTEMDRIVE)\Program Files\libusb-1.0\libusb&quot;;&quot;C:\Program Files (x86)\Polhemus\PDI\PDI_90\Inc&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\../pc_win32/server_src/vrpn_server/Debug/vrpn_server.pch"
@@ -72,10 +73,12 @@
 				OutputFile=".\../pc_win32/server_src/vrpn_server/Debug/vrpn_server.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(SYSTEMDRIVE)\sdk\cpp,$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib"
+				AdditionalLibraryDirectories="&quot;$(SYSTEMDRIVE)\sdk\cpp&quot;;&quot;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\../pc_win32/server_src/vrpn_server/Debug/vrpn_server.pdb"
 				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -97,9 +100,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -136,7 +136,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;../../dtrack;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include&quot;;&quot;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/include&quot;;&quot;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/utilities/include&quot;;../../isense;..;../quat;../../Dtrack;../../libfreespace/include"
+				AdditionalIncludeDirectories="&quot;$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include&quot;;../../dtrack;&quot;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include&quot;;&quot;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/include&quot;;&quot;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/utilities/include&quot;;../../isense;..;../quat;../../Dtrack;../../libfreespace/include;&quot;$(SYSTEMDRIVE)\Program Files\libusb-1.0\libusb&quot;;&quot;C:\Program Files (x86)\Polhemus\PDI\PDI_90\Inc&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -165,9 +165,11 @@
 				OutputFile=".\../pc_win32/server_src/vrpn_server/Release/vrpn_server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(SYSTEMDRIVE)\sdk\cpp,$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib"
+				AdditionalLibraryDirectories="&quot;$(SYSTEMDRIVE)\sdk\cpp&quot;;&quot;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib&quot;"
 				ProgramDatabaseFile=".\../pc_win32/server_src/vrpn_server/Release/vrpn_server.pdb"
 				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -189,9 +191,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

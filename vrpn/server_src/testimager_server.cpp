@@ -1,8 +1,11 @@
 // VRPN Imager Server example program.
 
-#include <stdio.h>
+#include <stdio.h>                      // for fprintf, NULL, stderr
+
 #include "vrpn_Connection.h"
-#include "vrpn_Imager.h"
+#include "vrpn_Imager.h"                // for vrpn_Imager_Server, etc
+#include "vrpn_Shared.h"                // for vrpn_SleepMsecs
+#include "vrpn_Types.h"                 // for vrpn_uint8
 
 static	vrpn_Connection	    *g_connection = NULL;
 static	vrpn_Imager_Server  *g_is = NULL;
@@ -28,7 +31,7 @@ static	void  fill_buffer(vrpn_uint8 *buffer,
 #ifndef min
 #define	min(a,b) ( (a) < (b) ? (a) : (b) )
 #endif
-int main (int argc, char * argv[])
+int main (int, char *[])
 {
   static  int frame_number = 0;
   static  vrpn_uint8 buffer[g_size*g_size];
@@ -65,7 +68,7 @@ int main (int argc, char * argv[])
     g_is->send_begin_frame(0, g_size-1, 0, g_size-1);
     g_is->mainloop();
     int nRowsPerRegion=vrpn_IMAGER_MAX_REGIONu8/g_size;
-    int y;
+    unsigned y;
     for(y=0; y<g_size; y+=nRowsPerRegion) {
       g_is->send_region_using_base_pointer(channel_id,0,g_size-1,y,min(g_size,y+nRowsPerRegion)-1,
 	buffer, 1, g_size, g_size);

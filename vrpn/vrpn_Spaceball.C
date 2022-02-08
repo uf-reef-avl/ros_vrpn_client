@@ -67,16 +67,19 @@
 //   johns@ks.uiuc.edu
 //
 
-#include <string.h>
+#include <stdio.h>                      // for fprintf, stderr
+#include <string.h>                     // for NULL, strlen
+
+#include "vrpn_Serial.h"                // for vrpn_flush_input_buffer, etc
+#include "vrpn_Shared.h"                // for timeval, vrpn_SleepMsecs, etc
 #include "vrpn_Spaceball.h"
-#include "vrpn_Shared.h"
-#include "vrpn_Serial.h"
 
 // turn on for debugging code, leave off otherwise
 #undef VERBOSE
 
 #if defined(VERBOSE) 
 #include <ctype.h> // for isprint()
+
 #define DEBUG 1
 #endif
 
@@ -86,34 +89,28 @@
 #define	STATUS_READING		(1) // Looking for the rest of the report
 #define MAX_TIME_INTERVAL (2000000) // max time between reports (usec)
 
-// This routine writes out the characters slowly, so as not to
-// overburden the Spaceball (came from VRPN Magellan driver code)
-static	int	vrpn_write_slowly(int fd, unsigned char *buffer, int len, int MsecWait)
-{	int	i;
-
-	for (i = 0; i < len; i++) {
-		vrpn_SleepMsecs(MsecWait);
-		if (vrpn_write_characters(fd, &buffer[i], 1) != 1) {
-			return -1;
-		}
-	}
-	return len;
-}
-
-
 // This creates a vrpn_Spaceball and sets it to reset mode. It opens
 // the serial device using the code in the vrpn_Serial_Analog constructor.
 vrpn_Spaceball::vrpn_Spaceball (const char * name, vrpn_Connection * c,
 			const char * port, int baud):
-		vrpn_Serial_Analog(name, c, port, baud),
-		vrpn_Button(name, c),
-		_numbuttons(12),
-		_numchannels(6),
-		null_radius(8)
+		vrpn_Serial_Analog(name, c, port, baud)
+		, vrpn_Button_Filter(name, c)
+		, _numbuttons(12)
+		, _numchannels(6)
+    , bufpos(0)
+    , packlen(0)
+    , escapedchar(0)
+    , erroroccured(0)
+    , resetoccured(0)
+    , spaceball4000(0)
+    , leftymode4000(0)
+		, null_radius(8)
 {
 	// Set the parameters in the parent classes
 	vrpn_Button::num_buttons = _numbuttons;
 	vrpn_Analog::num_channel = _numchannels;
+
+        vrpn_gettimeofday(&timestamp, NULL);	// Set watchdog now
 
 	// Set the status of the buttons and analogs to 0 to start
 	clear_values();
@@ -162,7 +159,7 @@ int	vrpn_Spaceball::reset(void) {
 
 	// Send commands to the device to cause it to reset and beep.
 	vrpn_flush_input_buffer(serial_fd);
-	vrpn_write_slowly(serial_fd, (unsigned char *)reset_str, strlen(reset_str), 5);
+	vrpn_write_slowly(serial_fd, (const unsigned char *)reset_str, strlen(reset_str), 5);
 
 	// We're now waiting for a response from the box
 	status = STATUS_SYNCING;
@@ -201,7 +198,7 @@ int vrpn_Spaceball::get_report(void)
   // pending packets we're trying to process.
   if (num > 0) {
     for (i=0; i<num; i++) {
-      /* process potentially occuring escaped character sequences */
+      /* process potentially occurring escaped character sequences */
       if (rawbuf[i] == '^') {
         if (!escapedchar) {
           escapedchar = 1;
@@ -358,10 +355,9 @@ int vrpn_Spaceball::get_report(void)
             nextchar = 1;  // this is where the timer data is, if we want it.
             nextchar = 3;  // Skip the zeroeth character (the command)
             for (chan = 0; chan < _numchannels; chan++) {
-              long intval;
+              vrpn_int16 intval;
               intval  = (buf[nextchar++]) << 8;
               intval |= (buf[nextchar++]);
-              intval  = (intval << 16) >> 16;
 
               // If the absolute value of the integer is <= the NULL 
               // radius, it should be set to zero.

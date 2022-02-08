@@ -7,14 +7,13 @@
 #ifndef PLANE_H
 #define PLANE_H
 
-#ifdef	VRPN_USE_PHANTOM_SERVER
-// RMT I hate that this has to be here, but things blow up in the compilation
-// if it is not.
-#ifdef __CYGWIN__
-#include <windows.h>
-#endif
+#include "vrpn_Configure.h"
 
-#include  "vrpn_Configure.h"
+
+#ifdef	VRPN_USE_PHANTOM_SERVER
+#include "vrpn_Shared.h"
+
+
 #include "ghost.h"
 
 class Plane:public vrpn_HapticSurface
@@ -80,11 +79,10 @@ public:
         void renderHL(void);
 
         // intersect the line segment from startPt to endPt with
-        // the sphere.  Return the closest point of intersection 
+        // the surface.  Return the closest point of intersection 
         // to the start point in intersectionPt.  Return the
         // surface normal at intersectionPt in intersectionNormal.
-        // Return which face (HL_FRONT or HL_BACK) is being touched
-        // in face.
+        // Return which face (HL_FRONT or HL_BACK) is being touched.
         // Return true if there is an intersection.
         static bool HLCALLBACK intersectSurface(
             const HLdouble startPt_WC[3], 

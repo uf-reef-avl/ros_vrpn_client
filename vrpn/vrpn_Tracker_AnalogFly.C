@@ -1,32 +1,27 @@
-#include <string.h>
-#include <math.h>
+#include <math.h>                       // for pow, fabs
+
+#include "quat.h"                       // for q_xyz_quat_type, etc
+#include "vrpn_Connection.h"            // for vrpn_Connection, etc
 #include "vrpn_Tracker_AnalogFly.h"
 
 #undef	VERBOSE
 
-#ifndef	M_PI
-#define M_PI		3.14159265358979323846
-#endif
-
-static	double	duration(struct timeval t1, struct timeval t2)
-{
-	return (t1.tv_usec - t2.tv_usec) / 1000000.0 +
-	       (t1.tv_sec - t2.tv_sec);
-}
-
 vrpn_Tracker_AnalogFly::vrpn_Tracker_AnalogFly
          (const char * name, vrpn_Connection * trackercon,
           vrpn_Tracker_AnalogFlyParam * params, float update_rate,
-	  vrpn_bool absolute, vrpn_bool reportChanges) :
+          bool absolute, bool reportChanges,
+          bool worldFrame) :
 	vrpn_Tracker (name, trackercon),
+	d_update_interval (update_rate ? (1/update_rate) : 1.0),
+	d_absolute (absolute),
+	d_reportChanges (reportChanges),
+	d_worldFrame (worldFrame),
 	d_reset_button(NULL),
 	d_which_button (params->reset_which),
 	d_clutch_button(NULL),
 	d_clutch_which (params->clutch_which),
-        d_clutch_engaged(false),
-	d_update_interval (update_rate ? (1/update_rate) : 1.0),
-	d_absolute (absolute),
-        d_reportChanges (reportChanges)
+	d_clutch_engaged(false),
+	d_clutch_was_off(false)
 {
 	int i;
 
@@ -67,12 +62,20 @@ vrpn_Tracker_AnalogFly::vrpn_Tracker_AnalogFly
 		// If the name starts with the '*' character, use
                 // the server connection rather than making a new one.
 		if (params->reset_name[0] == '*') {
-			d_reset_button = new vrpn_Button_Remote
-                               (&(params->reset_name[1]),
-				d_connection);
+                  try {
+                    d_reset_button = new vrpn_Button_Remote
+                    (&(params->reset_name[1]),
+                      d_connection);
+                  } catch (...) {
+                    d_reset_button = NULL;
+                  }
 		} else {
-			d_reset_button = new vrpn_Button_Remote
-                               (params->reset_name);
+                  try {
+		    d_reset_button = new vrpn_Button_Remote
+                      (params->reset_name);
+                  } catch (...) {
+                    d_reset_button = NULL;
+                  }
 		}
 		if (d_reset_button == NULL) {
 			fprintf(stderr,"vrpn_Tracker_AnalogFly: "
@@ -97,12 +100,20 @@ vrpn_Tracker_AnalogFly::vrpn_Tracker_AnalogFly
 		// If the name starts with the '*' character, use
                 // the server connection rather than making a new one.
 		if (params->clutch_name[0] == '*') {
-			d_clutch_button = new vrpn_Button_Remote
+                  try {
+                    d_clutch_button = new vrpn_Button_Remote
                                (&(params->clutch_name[1]),
 				d_connection);
-		} else {
-			d_clutch_button = new vrpn_Button_Remote
+                  } catch (...) {
+                    d_clutch_button = NULL;
+                  }
+                } else {
+                  try {
+                    d_clutch_button = new vrpn_Button_Remote
                                (params->clutch_name);
+                  } catch (...) {
+                    d_clutch_button = NULL;
+                  }
 		}
 		if (d_clutch_button == NULL) {
 			fprintf(stderr,"vrpn_Tracker_AnalogFly: "
@@ -168,14 +179,24 @@ vrpn_Tracker_AnalogFly::~vrpn_Tracker_AnalogFly (void)
 	if (d_reset_button != NULL) {
 		d_reset_button->unregister_change_handler(this,
                                         handle_reset_press);
-		delete d_reset_button;
+                try {
+                  delete d_reset_button;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_Tracker_AnalogFly::~vrpn_Tracker_AnalogFly(): delete failed\n");
+                  return;
+                }
 	}
 
 	// Tear down the clutch button update callback and remote (if there is one)
 	if (d_clutch_button != NULL) {
 		d_clutch_button->unregister_change_handler(this,
                                         handle_clutch_press);
-		delete d_clutch_button;
+                try {
+                  delete d_clutch_button;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_Tracker_AnalogFly::~vrpn_Tracker_AnalogFly(): delete failed\n");
+                  return;
+                }
 	}
 }
 
@@ -184,7 +205,7 @@ vrpn_Tracker_AnalogFly::~vrpn_Tracker_AnalogFly (void)
 // update the value there. The value is used by the matrix-generation code in
 // mainloop() to update the transformations; that work is not done here.
 
-void	vrpn_Tracker_AnalogFly::handle_analog_update
+void	VRPN_CALLBACK vrpn_Tracker_AnalogFly::handle_analog_update
                      (void *userdata, const vrpn_ANALOGCB info)
 {
 	vrpn_TAF_fullaxis	*full = (vrpn_TAF_fullaxis *)userdata;
@@ -215,7 +236,7 @@ void	vrpn_Tracker_AnalogFly::handle_analog_update
 // This routine will reset the matrix to identity when the reset button is
 // pressed.
 
-void vrpn_Tracker_AnalogFly::handle_reset_press
+void VRPN_CALLBACK vrpn_Tracker_AnalogFly::handle_reset_press
                      (void *userdata, const vrpn_BUTTONCB info)
 {
 	vrpn_Tracker_AnalogFly	*me = (vrpn_Tracker_AnalogFly*)userdata;
@@ -229,7 +250,7 @@ void vrpn_Tracker_AnalogFly::handle_reset_press
 
 // This handle state changes associated with the clutch button.
 
-void vrpn_Tracker_AnalogFly::handle_clutch_press
+void VRPN_CALLBACK vrpn_Tracker_AnalogFly::handle_clutch_press
                      (void *userdata, const vrpn_BUTTONCB info)
 {
   vrpn_Tracker_AnalogFly	*me = (vrpn_Tracker_AnalogFly*)userdata;
@@ -258,14 +279,19 @@ int	vrpn_Tracker_AnalogFly::setup_channel(vrpn_TAF_fullaxis *full)
 	// If the name starts with the '*' character, use the server
         // connection rather than making a new one.
 	if (full->axis.name[0] == '*') {
-		full->ana = new vrpn_Analog_Remote(&(full->axis.name[1]),
-                      d_connection);
+          try {
+            full->ana = new vrpn_Analog_Remote(&(full->axis.name[1]),
+              d_connection);
+          } catch (...) { full->ana = NULL; }
 #ifdef	VERBOSE
 		printf("vrpn_Tracker_AnalogFly: Adding local analog %s\n",
                           &(full->axis.name[1]));
 #endif
 	} else {
-		full->ana = new vrpn_Analog_Remote(full->axis.name);
+          try {
+            full->ana = new vrpn_Analog_Remote(full->axis.name);
+          } catch (...) { full->ana = NULL; }
+
 #ifdef	VERBOSE
 		printf("vrpn_Tracker_AnalogFly: Adding remote analog %s\n",
                           full->axis.name);
@@ -296,13 +322,18 @@ int	vrpn_Tracker_AnalogFly::teardown_channel(vrpn_TAF_fullaxis *full)
                           handle_analog_update);
 
 	// Delete the analog device.
-	delete full->ana;
+        try {
+          delete full->ana;
+        } catch (...) {
+          fprintf(stderr, "vrpn_Tracker_AnalogFly::teardown_channel(): delete failed\n");
+          return -1;
+        }
 
 	return ret;
 }
  
 // static
-int vrpn_Tracker_AnalogFly::handle_newConnection(void * userdata,
+int VRPN_CALLBACK vrpn_Tracker_AnalogFly::handle_newConnection(void * userdata,
                                                  vrpn_HANDLERPARAM)
 {
      
@@ -357,7 +388,7 @@ void vrpn_Tracker_AnalogFly::mainloop()
   // See if it has been long enough since our last report.
   // If so, generate a new one.
   vrpn_gettimeofday(&now, NULL);
-  interval = duration(now, d_prevtime);
+  interval = vrpn_TimevalDurationSeconds(now, d_prevtime);
 
   if (shouldReport(interval)) {
 
@@ -426,9 +457,9 @@ void	vrpn_Tracker_AnalogFly::update_matrix_based_on_values
   ty = d_y.value * time_interval;
   tz = d_z.value * time_interval;
   
-  rx = d_sx.value * time_interval * (2*M_PI);
-  ry = d_sy.value * time_interval * (2*M_PI);
-  rz = d_sz.value * time_interval * (2*M_PI);
+  rx = d_sx.value * time_interval * (2*VRPN_PI);
+  ry = d_sy.value * time_interval * (2*VRPN_PI);
+  rz = d_sz.value * time_interval * (2*VRPN_PI);
 
   // Build a rotation matrix, then add in the translation
   q_euler_to_col_matrix(diffM, rz, ry, rx);
@@ -436,9 +467,8 @@ void	vrpn_Tracker_AnalogFly::update_matrix_based_on_values
 
   // While the clutch is not engaged, we don't move.  Record that
   // the clutch was off so that we know later when it is re-engaged.
-  static bool clutch_was_off = false;
   if (!d_clutch_engaged) {
-    clutch_was_off = true;
+    d_clutch_was_off = true;
     return;
   }
   
@@ -447,8 +477,8 @@ void	vrpn_Tracker_AnalogFly::update_matrix_based_on_values
   // the first frame of the mouse-hold leaves us in the same location.
   // For the absolute matrix, this re-engages new motion at the previous
   // location.
-  if (d_clutch_engaged && clutch_was_off) {
-    clutch_was_off = false;
+  if (d_clutch_engaged && d_clutch_was_off) {
+    d_clutch_was_off = false;
     q_type  diff_orient;
     // This is backwards, because Euler angles have rotation about Z first...
     q_from_euler(diff_orient, rz, ry, rx);
@@ -475,7 +505,24 @@ void	vrpn_Tracker_AnalogFly::update_matrix_based_on_values
   } else {
       // Multiply the current matrix by the difference matrix to update
       // it to the current time. 
-      q_matrix_mult(d_currentMatrix, diffM, d_currentMatrix);
+      if (d_worldFrame) {
+        // If using world frame:
+        // 1. Separate out the translation and add to the differential translation
+        tx += d_currentMatrix[3][0];
+        ty += d_currentMatrix[3][1];
+        tz += d_currentMatrix[3][2];
+        diffM[3][0] = 0; diffM[3][1] = 0; diffM[3][2] = 0;
+        d_currentMatrix[3][0] = 0; d_currentMatrix[3][1] = 0; d_currentMatrix[3][2] = 0;
+
+        // 2. Compose the rotations.
+        q_matrix_mult(d_currentMatrix, d_currentMatrix, diffM);
+
+        // 3. Put the new translation back in the matrix.
+        d_currentMatrix[3][0] = tx; d_currentMatrix[3][1] = ty; d_currentMatrix[3][2] = tz;
+
+      } else {
+        q_matrix_mult(d_currentMatrix, diffM, d_currentMatrix);
+      }
   }
 
   // Finally, convert the matrix into a pos/quat
@@ -498,7 +545,7 @@ void vrpn_Tracker_AnalogFly::convert_matrix_to_tracker (void)
   }
 }
 
-vrpn_bool vrpn_Tracker_AnalogFly::shouldReport
+bool vrpn_Tracker_AnalogFly::shouldReport
                   (double elapsedInterval) const {
   
   // If we haven't had enough time pass yet, don't report.

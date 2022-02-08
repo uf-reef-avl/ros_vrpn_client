@@ -4,12 +4,16 @@
 #ifdef	_WIN32
 #include <io.h>
 #else
-#include <unistd.h>
 #endif
-#include <stdio.h>
-#include <string.h>
+#include <stdio.h>                      // for fprintf, stderr, NULL
+#include <string.h>                     // for strlen
+
 #include "vrpn_Dyna.h"
-#include "vrpn_Serial.h"
+#include "vrpn_Serial.h"                // for vrpn_write_characters, etc
+#include "vrpn_Shared.h"                // for vrpn_SleepMsecs, timeval, etc
+#include "vrpn_Types.h"                 // for vrpn_float64
+
+class VRPN_API vrpn_Connection;
 
 #define T_ERROR (-1)
 #define T_OK 	(0)
@@ -25,12 +29,12 @@
 
 vrpn_Tracker_Dyna::vrpn_Tracker_Dyna(
 		      char *name, vrpn_Connection *c, int cSensors,
-		      char *port, long baud ) :
-vrpn_Tracker_Serial(name,c,port,baud), cSensors(cSensors), cResets(0)
+		      const char *port, long baud ) :
+vrpn_Tracker_Serial(name,c,port,baud), cResets(0), cSensors(cSensors)
 {
-    if (cSensors>MAX_SENSORS) {
-      fprintf(stderr, "\nvrpn_Tracker_Dyna: too many sensors requested ... only %d allowed (%d specified)", MAX_SENSORS, cSensors );
-      cSensors = MAX_SENSORS;
+    if (cSensors>VRPN_DYNA_MAX_SENSORS) {
+      fprintf(stderr, "\nvrpn_Tracker_Dyna: too many sensors requested ... only %d allowed (%d specified)", VRPN_DYNA_MAX_SENSORS, cSensors );
+      cSensors = VRPN_DYNA_MAX_SENSORS;
     }
     fprintf(stderr, "\nvrpn_Tracker_Dyna: starting up ...");
     d_sensor = 0 ; // sensor id is always 0 (first sensor is 0);
@@ -98,10 +102,10 @@ int vrpn_Tracker_Dyna::get_status()
 
 void vrpn_Tracker_Dyna::reset() {
     //static int numResets = 0;	// How many resets have we tried?;
-  static char T_PDYN_C_CTL_C[4] ="\003\003\003";
-  static int T_PDYN_RECORD_LENGTH = 8;
+  static const char T_PDYN_C_CTL_C[4] ="\003\003\003";
+  static const int T_PDYN_RECORD_LENGTH = 8;
 
-  vrpn_write_characters(serial_fd, (unsigned char*)T_PDYN_C_CTL_C, strlen(T_PDYN_C_CTL_C));
+  vrpn_write_characters(serial_fd, (const unsigned char*)T_PDYN_C_CTL_C, strlen(T_PDYN_C_CTL_C));
   vrpn_write_characters(serial_fd,(const unsigned char *) "4", 1); // set to polling mode;
       
   /* pause 1 second to allow the Dynasight buffer to stabilize	*/
@@ -129,7 +133,7 @@ void vrpn_Tracker_Dyna::reset() {
    my_flush();
 
    /* set the Dynasight to continuous mode    */
-   vrpn_write_characters(serial_fd, (unsigned char*)T_PDYN_C_CTL_C, strlen(T_PDYN_C_CTL_C));
+   vrpn_write_characters(serial_fd, (const unsigned char*)T_PDYN_C_CTL_C, strlen(T_PDYN_C_CTL_C));
    //vrpn_write_characters(serial_fd, (const unsigned char *)"V", 1);
    vrpn_write_characters(serial_fd, (const unsigned char *)"0", 1);
    //T_PDYN_C_CONTINUOUS = "V"

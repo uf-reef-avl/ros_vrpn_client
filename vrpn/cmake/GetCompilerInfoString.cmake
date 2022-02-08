@@ -19,6 +19,11 @@
 # http://academic.cleardefinition.com
 # Iowa State University HCI Graduate Program/VRAC
 #
+# Copyright Iowa State University 2009-2010.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE_1_0.txt or copy at
+# http://www.boost.org/LICENSE_1_0.txt)
+#
 # Some functions based on cmake-2.8.0 modules FindBoost.cmake and CTest.cmake
 #=============================================================================
 # Copyright 2006-2009 Kitware, Inc.
@@ -101,11 +106,9 @@ function(get_compiler_info_string _var)
 		set(_verstring "gcc${_gccver}")
 
 	else()
-		# Some other compiler we don't handle yet.
-		message(STATUS
-			"WARNING: Not GCC or MSVC, so we invented a messy compiler info string")
+		# Some other compiler we don't handle in more detail yet.
 		string(REGEX REPLACE " " "_" _verstring "${CMAKE_GENERATOR}")
-		set(_verstring "generator:${_verstring}")
+		set(_verstring "${CMAKE_CXX_COMPILER_ID}:generator:${_verstring}")
 	endif()
 
 	# Return _verstring

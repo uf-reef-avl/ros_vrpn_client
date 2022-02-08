@@ -12,31 +12,16 @@
 //     specification commands with the RS232TOFBB command.
 //   (weberh 1/11/98)
 
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <ctype.h>
+#include <stdio.h>                      // for fprintf, stderr, perror, etc
+#include <time.h>                       // for ctime, time, time_t
 
-#ifdef linux
-#include <termios.h>
-#endif
-
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#endif
-
-#include "quat.h"
-#include "vrpn_Tracker.h"
+#include "quat.h"                       // for q_invert
 #include "vrpn_Flock.h"
-#include "vrpn_Serial.h"
+#include "vrpn_Serial.h"                // for vrpn_drain_output_buffer, etc
+#include "vrpn_Tracker.h"               // for vrpn_TRACKER_FAIL, etc
+#include "vrpn_Types.h"                 // for vrpn_float64
+
+class VRPN_API vrpn_Connection;
 
 // output a status msg every status_msg_secs
 #define STATUS_MSG
@@ -137,7 +122,7 @@ void vrpn_Tracker_Flock::printError( unsigned char uchErrCode,
     fprintf(stderr,"...Numeric CPU Error - call factory");
     break;
   case 28:
-    fprintf(stderr,"...CRT Syncronization Error");
+    fprintf(stderr,"...CRT Synchronization Error");
     break;
   case 29:
     fprintf(stderr,"...Transmitter Not Active Error");
@@ -228,16 +213,23 @@ int vrpn_Tracker_Flock::checkError() {
   return rguch[0];
 }
 
-vrpn_Tracker_Flock::vrpn_Tracker_Flock(char *name, vrpn_Connection *c, 
-				       int cSensors, char *port, long baud,
-				       int fStreamMode, int useERT, bool invertQuaternion, int active_hemisphere) :
-  vrpn_Tracker_Serial(name,c,port,baud), cSensors(cSensors), cResets(0),
-  fStream(fStreamMode), fGroupMode(1), cSyncs(0), fFirstStatusReport(1), d_useERT(useERT),
-  activeHemisphere(active_hemisphere),
-  d_invertQuaternion(invertQuaternion) {
-    if (cSensors>MAX_SENSORS) {
-      fprintf(stderr, "\nvrpn_Tracker_Flock: too many sensors requested ... only %d allowed (%d specified)", MAX_SENSORS, cSensors );
-      cSensors = MAX_SENSORS;
+vrpn_Tracker_Flock::vrpn_Tracker_Flock(char *name, vrpn_Connection *c,
+				       int cSensors, const char *port, long baud,
+				       int fStreamMode, int useERT, bool invertQuaternion, int active_hemisphere)
+  : vrpn_Tracker_Serial(name,c,port,baud)
+  , activeHemisphere(active_hemisphere)
+  , cSensors(cSensors)
+  , fStream(fStreamMode)
+  , fGroupMode(1)
+  , d_useERT(useERT)
+  , d_invertQuaternion(invertQuaternion)
+  , cResets(0)
+  , cSyncs(0)
+  , fFirstStatusReport(1)
+{
+    if (cSensors>VRPN_FLOCK_MAX_SENSORS) {
+      fprintf(stderr, "\nvrpn_Tracker_Flock: too many sensors requested ... only %d allowed (%d specified)", VRPN_FLOCK_MAX_SENSORS, cSensors );
+      cSensors = VRPN_FLOCK_MAX_SENSORS;
     }
     fprintf(stderr, "\nvrpn_Tracker_Flock: starting up (FOBHack)...");
 }
@@ -312,7 +304,7 @@ void vrpn_Tracker_Flock::reset()
 {
    int i;
    int resetLen;
-   unsigned char reset[6*(MAX_SENSORS+1)+10];
+   unsigned char reset[6*(VRPN_FLOCK_MAX_SENSORS+1)+10];
 
    // If the RTS/CTS pins are in the cable that connects the Flock
    // to the computer, we need to raise and drop the RTS/CTS line
@@ -324,7 +316,7 @@ void vrpn_Tracker_Flock::reset()
    vrpn_set_rts( serial_fd );
    vrpn_SleepMsecs(1000);
    vrpn_clear_rts( serial_fd );
-   vrpn_SleepMsecs(5000);
+   vrpn_SleepMsecs(2000);
 
    // set vars for error handling
    // set them right away so they are set properly in the
@@ -353,7 +345,7 @@ void vrpn_Tracker_Flock::reset()
    vrpn_drain_output_buffer( serial_fd );
 
    // wait for tracker to respond and flush buffers
-   vrpn_SleepMsecs(500);
+   vrpn_SleepMsecs(5000);
 
    // Send the tracker a string that should reset it.
 
@@ -386,7 +378,7 @@ void vrpn_Tracker_Flock::reset()
    vrpn_drain_output_buffer( serial_fd );
 
    // wait for auto reconfig
-   vrpn_SleepMsecs(500);
+   vrpn_SleepMsecs(10000);
 
    // now set modes: pos/quat, group, stream
    resetLen=0;
@@ -478,7 +470,7 @@ void vrpn_Tracker_Flock::reset()
        fprintf(stderr," (a receiver)");
      } else {
        fprintf(stderr," (a transmitter)");
-// now we allow non transmitters at fisrt adress !!!!
+// now we allow non transmitters at fisrt address !!!!
 //       if (i != 0) {
 //	   fprintf(stderr,"\nError: VRPN Flock driver can only accept transmitter as first unit\n");
 //	   status = vrpn_TRACKER_FAIL;
@@ -704,6 +696,18 @@ if (vrpn_write_characters(serial_fd, (const unsigned char *) &chPoint, 1 )!=1) {
 vrpn_gettimeofday(&timestamp, NULL);\
 }   
 
+static const char* vrpn_ctime_r(time_t* cur_time, char* buffer, size_t bufsize)
+{
+#if _WIN32
+  if (0 != ctime_s(buffer, bufsize, cur_time)) {
+    return NULL;
+  }
+  return buffer;
+#else
+  return ctime_r(cur_time, buffer);
+#endif
+}
+
 void	vrpn_Tracker_Flock::send_report(void) {
     vrpn_Tracker_Serial::send_report();
 
@@ -747,8 +751,9 @@ void	vrpn_Tracker_Flock::send_report(void) {
 	    (vrpn_TimevalMsecs(vrpn_TimevalDiff(tvNow, 
 						tvLastStatusReport))/1000.0);
 	  time_t tNow = time(NULL);
-	  char *pch = ctime(&tNow);
-	  pch[24]='\0';
+    char pch[28];
+    memset(pch, 0, sizeof(pch));
+	  vrpn_ctime_r(&tNow, pch, sizeof(pch));
 	  fprintf(stderr, "\nFlock: reports being sent at %6.2lf hz "
 		  "(%d sensors, so ~%6.2lf hz per sensor) ( %s )", 
 		  dRate, cSensors, dRate/cSensors, pch);

@@ -1,18 +1,19 @@
 #ifndef INCLUDED_BUTTONFLY
 #define INCLUDED_BUTTONFLY
 
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#ifndef _WIN32
-#include <sys/time.h>
-#endif
+#include <quat.h>                       // for q_matrix_type
+#include <stdio.h>                      // for NULL
+#include <string.h>                     // for strcpy, memcpy
 
-#include "vrpn_Tracker.h"
-#include "vrpn_Button.h"
-#include "vrpn_Analog.h"
-#include <quat.h>
+#include "vrpn_Analog.h"                // for vrpn_ANALOGCB, etc
+#include "vrpn_Button.h"                // for vrpn_BUTTONCB, etc
+#include "vrpn_Configure.h"             // for VRPN_API, VRPN_CALLBACK
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Tracker.h"               // for vrpn_Tracker
+#include "vrpn_Types.h"                 // for VRPN_FALSE
+
+class VRPN_API vrpn_Connection;
+struct vrpn_HANDLERPARAM;
 
 const int vrpn_BUTTONFLY_MAXAXES = 200;
 
@@ -35,7 +36,7 @@ class VRPN_API vrpn_TBF_axis {
       };
     vrpn_TBF_axis(const char *n, int ch, const float v[],
 	const float rv[], bool absolut)
-      { strncpy(name, n, sizeof(name)-1); name[sizeof(name)-1] = '\0';
+      { vrpn_strcpy(name, n);
 	channel = ch;
 	memcpy(vec, v, sizeof(vec));
 	memcpy(rot, rv, sizeof(rot));
@@ -118,7 +119,7 @@ class VRPN_API vrpn_Tracker_ButtonFly : public vrpn_Tracker {
     vrpn_Tracker_ButtonFly (const char * name, vrpn_Connection * trackercon,
 			    vrpn_Tracker_ButtonFlyParam * params,
                             float update_rate,
-                            vrpn_bool reportChanges = VRPN_FALSE);
+                            bool reportChanges = VRPN_FALSE);
 
     virtual ~vrpn_Tracker_ButtonFly (void);
 
@@ -133,7 +134,7 @@ class VRPN_API vrpn_Tracker_ButtonFly : public vrpn_Tracker {
 
     double	    d_update_interval;	//< How long to wait between sends
     struct timeval  d_prevtime;		//< Time of the previous report
-    vrpn_bool       d_reportChanges;	//< Report only when something changes?
+    bool       d_reportChanges;	//< Report only when something changes?
 
     vrpn_TBF_fullaxis	d_axes[vrpn_BUTTONFLY_MAXAXES];
     int			d_num_axes;
@@ -166,7 +167,7 @@ class VRPN_API vrpn_Tracker_ButtonFly : public vrpn_Tracker {
     void    update_matrix_based_on_values (double time_interval);
     void    convert_matrix_to_tracker (void);
 
-    vrpn_bool shouldReport (double elapsedInterval);
+    bool shouldReport (double elapsedInterval);
 
     int setup_channel(vrpn_TBF_fullaxis * full);
     int teardown_channel(vrpn_TBF_fullaxis * full);

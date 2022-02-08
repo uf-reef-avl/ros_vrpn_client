@@ -41,14 +41,14 @@
 // Russ Taylor in August 2000.
 
 #include "vrpn_Analog_USDigital_A2.h"
+
+class VRPN_API vrpn_Connection;
 #ifdef VRPN_USE_USDIGITAL
 extern "C" {
 #include <SEIDrv32.H>
 }
 #endif
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdio.h>                      // for fprintf, stderr
 
 //  Constants used by this class
 const vrpn_uint32 vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2_CHANNEL_MAX = 
@@ -64,20 +64,18 @@ vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2 (const char * name,
                                                     vrpn_int32 reportOnChangeOnly) :
 vrpn_Analog (name, c),
 _SEIopened(vrpn_false),
-_numDevices(0),
-_devAddr(0),
-_reportChange(reportOnChangeOnly!=0)
+_devAddr(NULL),
+_reportChange(reportOnChangeOnly!=0),
+_numDevices(0)
 {
 #ifdef VRPN_USE_USDIGITAL
-    this->_devAddr = new long[vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2_CHANNEL_MAX] ;
-    assert(this->_devAddr) ;
-
+    this->_devAddr = new long[vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2_CHANNEL_MAX];
     this->setNumChannels( numChannels );
 
     // Check if we got a connection.
-    if (d_connection == NULL) 
-    {
+    if (d_connection == NULL) {
         fprintf(stderr,"vrpn_Analog_USDigital_A2: Can't get connection!\n");
+	return;
     }    
 
     //  Prepare to get data from the SEI bus
@@ -106,8 +104,7 @@ _reportChange(reportOnChangeOnly!=0)
 #ifdef VRPN_USE_USDIGITAL
     _numDevices = GetNumberOfDevices() ;
 #endif
-    if (_numDevices<0 || _numDevices>vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2_CHANNEL_MAX)
-    {
+    if (_numDevices<0 || _numDevices>vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2_CHANNEL_MAX) {
         fprintf(stderr,
             "vrpn_Analog_USDigital_A2:  Error (%d) returned from GetNumberOfDevices call on SEI bus",
             _numDevices) ;
@@ -123,8 +120,7 @@ _reportChange(reportOnChangeOnly!=0)
         _devAddr[c] = -1 ;
 
     //  Get the device addresses.
-    for (vrpn_uint32 d=0 ; d<_numDevices ; d++)
-    {
+    for (vrpn_uint32 d=0 ; d<_numDevices ; d++) {
         long deviceInfoErr, model, serialnum, version, addr ;
 #ifdef VRPN_USE_USDIGITAL
         deviceInfoErr = GetDeviceInfo(d, &model, &serialnum, &version, &addr) ;
@@ -143,6 +139,11 @@ _reportChange(reportOnChangeOnly!=0)
     }
 #else
     fprintf(stderr,"vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2(): Not compiled in; define VRPN_USE_USDIGITAL in vrpn_Configure.h and recompile VRPN\n");
+    portNum = portNum + 1; // Remove unused parameter warning.
+    numChannels = numChannels + 1; // Remove unused parameter warning.
+    _SEIopened = !_SEIopened; // Removed unused variable warning.
+    _devAddr = _devAddr + 1; // Removed unused variable warning.
+    _numDevices = _numDevices + 1; // Removed unused variable warning.
 #endif
 }    //  constructor
 
@@ -156,7 +157,12 @@ vrpn_Analog_USDigital_A2::~vrpn_Analog_USDigital_A2()
     }
 
     //  deallocate the list of device addresses.
-    delete _devAddr ; 
+    try {
+      delete _devAddr;
+    } catch (...) {
+      fprintf(stderr, "vrpn_Analog_USDigital_A2::~vrpn_Analog_USDigital_A2(): delete failed\n");
+      return;
+    }
     _devAddr = 0 ;
 #endif
 }    //  destructor
@@ -214,7 +220,7 @@ vrpn_int32 vrpn_Analog_USDigital_A2::setNumChannels (vrpn_int32 sizeRequested)
 {
     if (sizeRequested < 0) 
         num_channel = 0;
-    else if (sizeRequested > vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2_CHANNEL_MAX) 
+    else if (static_cast<unsigned>(sizeRequested) > vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2_CHANNEL_MAX) 
         num_channel = (vrpn_int32) vrpn_Analog_USDigital_A2::vrpn_Analog_USDigital_A2_CHANNEL_MAX;
     else
         num_channel = (vrpn_int32) sizeRequested;

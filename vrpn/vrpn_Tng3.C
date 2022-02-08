@@ -5,11 +5,16 @@
 //
 // This code is based on the Tng3 code from pulsar.org
 
-#include <string.h>
-#include <math.h>
-#include "vrpn_Tng3.h"
-#include "vrpn_Shared.h"
+#include <math.h>                       // for floor
+#include <stdio.h>                      // for fprintf, stderr, printf
+
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_WARNING, etc
 #include "vrpn_Serial.h"
+#include "vrpn_Shared.h"                // for timeval, vrpn_gettimeofday
+#include "vrpn_Tng3.h"
+
+#define VRPN_TIMESTAMP_MEMBER _timestamp // Configuration required for vrpn_MessageMacros in this class.
+#include "vrpn_MessageMacros.h"         // for VRPN_MSG_INFO, VRPN_MSG_WARNING, VRPN_MSG_ERROR
 
 #undef VERBOSE
 
@@ -30,16 +35,6 @@
 #define	STATUS_READING		(1)	// Looking for the rest of the report
 #define MAX_TIME_INTERVAL  (2000000) // max time between reports (usec)
 
-#define	VRPN_INFO(msg)	  { send_text_message(msg, _timestamp, vrpn_TEXT_NORMAL) ; if (d_connection) d_connection->send_pending_reports(); }
-#define	VRPN_WARNING(msg) { send_text_message(msg, _timestamp, vrpn_TEXT_WARNING) ; if (d_connection) d_connection->send_pending_reports(); }
-#define	VRPN_ERROR(msg)	  { send_text_message(msg, _timestamp, vrpn_TEXT_ERROR) ; if (d_connection) d_connection->send_pending_reports(); }
-
-
-static	unsigned long	duration(struct timeval t1, struct timeval t2)
-{
-    return (t1.tv_usec - t2.tv_usec) +
-	1000000L * (t1.tv_sec - t2.tv_sec);
-}
 
 static void pause (double delay) {
     if (delay < 0)
@@ -51,7 +46,7 @@ static void pause (double delay) {
 
     do {
 	vrpn_gettimeofday (&now, NULL);
-    } while (duration(now, start) < interval);
+    } while (vrpn_TimevalDuration(now, start) < interval);
 	
 }
 
@@ -67,9 +62,10 @@ vrpn_Tng3::vrpn_Tng3 (const char * name,
 		      const int numbuttons, 
 		      const int numchannels):
     vrpn_Serial_Analog(name, c, port, baud),
-    vrpn_Button(name, c),
+    vrpn_Button_Filter(name, c),
     _numbuttons(numbuttons),
-    _numchannels(numchannels)
+    _numchannels(numchannels),
+    _num_read(0)
 {
     // Verify the validity of the parameters
     if (_numbuttons > MAX_TBUTTONS) {
@@ -85,8 +81,12 @@ vrpn_Tng3::vrpn_Tng3 (const char * name,
     vrpn_Button::num_buttons = _numbuttons;
     vrpn_Analog::num_channel = _numchannels;
 
+    vrpn_gettimeofday(&_timestamp, NULL);	// Set watchdog now
+    bDataPacketStart = 0x55;
+
     // Set the status of the buttons, analogs and encoders to 0 to start
     clear_values();
+    _bufcount = 0;
 
     // Set the mode to reset
     _status = STATUS_RESETTING;
@@ -159,7 +159,6 @@ int vrpn_Tng3::get_report(void)
 {
     int i;
     unsigned int buttonBits = 0;
-    static  int num_read = 0;
 
     // Zero timeout, poll for any available characters
     struct timeval timeout = {0, 0};
@@ -171,12 +170,12 @@ int vrpn_Tng3::get_report(void)
       if (1 == vrpn_read_available_characters(serial_fd, _buffer, 1, &timeout)) {
 	// if not a record start, we need to resync
         if (_buffer[0] != bDataPacketStart) {
-            VRPN_WARNING("Resyncing");
+            VRPN_MSG_WARNING("Resyncing");
 	    return 0;;
         }
 
 	// we got a good start byte... we're reading now
-        num_read = 0;   //< Ignore the status byte for the following record
+        _num_read = 0;   //< Ignore the status byte for the following record
 	status = STATUS_READING;
 
 	// invert the bits for the next packet start
@@ -195,17 +194,17 @@ int vrpn_Tng3::get_report(void)
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
     int result = vrpn_read_available_characters(serial_fd, 
-		  &_buffer[num_read], DATA_RECORD_LENGTH-num_read, &timeout);    
+		  &_buffer[_num_read], DATA_RECORD_LENGTH-_num_read, &timeout);    
 
     if (result < 0) {
-      VRPN_WARNING("Bad read");
+      VRPN_MSG_WARNING("Bad read");
       status = STATUS_SYNCING;
       return 0;
     }
 
     // If we don't have a full record, go back again.
-    num_read += result;
-    if (num_read < DATA_RECORD_LENGTH) {
+    _num_read += result;
+    if (_num_read < DATA_RECORD_LENGTH) {
 	return 0;
     }
 
@@ -277,8 +276,10 @@ void vrpn_Tng3::mainloop(void)
 	    while (get_report()) {};	// Keep getting reports as long as they come
 	    struct timeval current_time;
 	    vrpn_gettimeofday(&current_time, NULL);
-	    if ( duration(current_time,_timestamp) > MAX_TIME_INTERVAL) {
-		    fprintf(stderr,"TNG3 failed to read... current_time=%ld:%ld, timestamp=%ld:%ld\n",current_time.tv_sec, current_time.tv_usec, _timestamp.tv_sec, _timestamp.tv_usec);
+	    if ( vrpn_TimevalDuration(current_time,_timestamp) > MAX_TIME_INTERVAL) {
+		    fprintf(stderr,"TNG3 failed to read... current_time=%ld:%ld, timestamp=%ld:%ld\n",
+					current_time.tv_sec, static_cast<long>(current_time.tv_usec),
+					_timestamp.tv_sec, static_cast<long>(_timestamp.tv_usec));
 		    send_text_message("Too long since last report, resetting", current_time, vrpn_TEXT_ERROR);
 		    status = STATUS_RESETTING;
 	    }
@@ -325,7 +326,7 @@ int vrpn_Tng3::syncDatastream (double seconds) {
     while (!loggedOn) {
 	struct timeval current_time;
 	vrpn_gettimeofday(&current_time, NULL);
-	if (duration(current_time, start_time) > maxDelay ) {
+	if (vrpn_TimevalDuration(current_time, start_time) > maxDelay ) {
 	    // if we've timed out, go back unhappy
 	    fprintf(stderr,"vrpn_Tng3::syncDatastream timeout expired: %d secs\n", (int)seconds);
 	    return 0;  // go back unhappy

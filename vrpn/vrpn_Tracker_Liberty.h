@@ -8,17 +8,15 @@
 #ifndef VRPN_TRACKER_LIBERTY_H
 #define VRPN_TRACKER_LIBERTY_H
 
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#ifndef _WIN32
-#include <sys/time.h>
-#endif
+#include <stdio.h>                      // for NULL
 
-#include "vrpn_Tracker.h"
-#include "vrpn_Button.h"
-#include "vrpn_Analog.h"
+#include "vrpn_Configure.h"             // for VRPN_API
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Tracker.h"               // for vrpn_Tracker_Serial
+#include "vrpn_Types.h"                 // for vrpn_uint32
+
+class VRPN_API vrpn_Button_Server;
+class VRPN_API vrpn_Connection;
 
 const int vrpn_LIBERTY_MAX_STATIONS = 8;    //< How many stations can exist
 const int vrpn_LIBERTY_MAX_WHOAMI_LEN = 1024; //< Maximum whoami response length
@@ -56,18 +54,13 @@ class VRPN_API vrpn_Tracker_Liberty: public vrpn_Tracker_Serial {
   virtual int get_report(void);
   virtual void reset();
 
-  /// Swap the endian-ness of the 4-byte entry in the buffer.
-  /// This is used to make the little-endian IEEE float values
-  /// returned by the Liberty into the big-endian format that is
-  /// expected by the VRPN unbuffer routines.
-
-  void swap_endian4(char *buffer);
-
   struct timeval reset_time;
   int	do_filter;		//< Should we turn on filtering for pos/orient?
   int	num_stations;		//< How many stations maximum on this Liberty?
+  int   num_resets;		//< How many resets we've tried this time.
   char	add_reset_cmd[2048];	//< Additional reset commands to be sent
-  int whoami_len;
+  int   whoami_len;
+  int   got_single_sync_char;
 
   struct timeval liberty_zerotime;    //< When the liberty time counter was zeroed
   struct timeval liberty_timestamp; //< The time returned from the Liberty System

@@ -21,7 +21,21 @@
 #HW_OS := powerpc_aix
 #HW_OS := powerpc_macosx
 #HW_OS := universal_macosx
+#HW_OS := macosx_32_64
+#HW_OS := macosx_64
 ##########################
+
+##########################
+# Mac OS X-specific options. If HW_OS is powerpc_macosx or universal_macosx,
+# uncomment one line below to choose the minimum targeted OS X version and
+# corresponding SDK. If none of the lines below is commented out, 10.5 will
+# be the minimum version.
+##########################
+#MAC_OS_MIN_VERSION := 10.4
+#MAC_OS_MIN_VERSION := 10.5
+#MAC_OS_MIN_VERSION := 10.6
+#MAC_OS_MIN_VERSION := 10.7
+#MAC_OS_MIN_VERSION := 10.8
 
 ##########################
 # Directories for installation
@@ -61,6 +75,33 @@ ifdef PBASE_ROOT
   endif
 endif
 
+  ifneq (,$(findstring macosx,$(HW_OS)))
+    ifndef MAC_OS_MIN_VERSION
+      MAC_OS_MIN_VERSION := 10.5
+    endif
+
+    # Select which compiler and MAC OS X SDK to use
+    MAC_GCC := g++
+    ifeq ($(MAC_OS_MIN_VERSION), 10.8)
+      MAC_OS_SDK := MacOSX10.8.sdk
+    else
+    ifeq ($(MAC_OS_MIN_VERSION), 10.7)
+      MAC_OS_SDK := MacOSX10.7.sdk
+    else
+   ifeq ($(MAC_OS_MIN_VERSION), 10.6)
+      MAC_OS_SDK := MacOSX10.6.sdk
+    else
+      ifeq ($(MAC_OS_MIN_VERSION), 10.5)
+        MAC_OS_SDK := MacOSX10.5.sdk
+      else
+        MAC_OS_SDK := MacOSX10.4u.sdk
+        MAC_GCC := g++-4.0
+      endif
+    endif
+  endif
+ endif
+endif
+
 CC := g++
 ifeq ($(HW_OS),pc_cygwin)
 	SYSLIBS := -lcygwin -luser32 -lgdi32 -lcomdlg32 -lwsock32 -lSetupApi
@@ -78,12 +119,37 @@ ifeq ($(HW_OS),powerpc_aix)
 	CC := /usr/ibmcxx/bin/xlC_r $(DEBUG_FLAGS) -qarch=pwr3 -w
 endif
 
+ifeq ($(HW_OS), powerpc_macosx)
+	CC := $(MAC_GCC) -arch ppc -isysroot /Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
+	RANLIB := ranlib
+	AR := libtool -static -o
+	SYSLIBS := -framework CoreFoundation -framework IOKit -framework System
+endif
+
 ifeq ($(HW_OS),universal_macosx)
-	CC := g++ -arch ppc -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4
+        CC := $(MAC_GCC) -arch ppc -arch i386 -arch x86_64 -isysroot /Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
 	RANLIB := :
 	AR := libtool -static -o
 	SYSLIBS := -framework CoreFoundation -framework IOKit -framework System
 endif
+
+   ifeq ($(HW_OS), macosx_32_64)
+        CC := $(MAC_GCC) -arch i386 -arch x86_64 -isysroot /Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
+        RANLIB := :
+        AR := libtool -static -o
+	SYSLIBS := -framework CoreFoundation -framework IOKit -framework System
+  endif
+  
+    ifeq ($(HW_OS), macosx_64)
+  		 ifeq ($(MAC_OS_SDK), MacOSX10.6.sdk)
+    		CC := $(MAC_GCC) -arch x86_64 -isysroot /Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
+       else
+     		CC := $(MAC_GCC) -arch x86_64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/$(MAC_OS_SDK) -mmacosx-version-min=$(MAC_OS_MIN_VERSION)
+       endif
+        RANLIB := :
+        AR := libtool -static -o
+		SYSLIBS := -framework CoreFoundation -framework IOKit -framework System
+    endif
 
 ifeq ($(HW_OS),pc_linux_ia64)
 	CC := g++
@@ -113,6 +179,8 @@ ifeq ($(HW_OS),pc_linux)
 #	SYSLIBS := -ldl
 # For Freespace Devices
 #	SYSLIBS := -lfreespace
+# For HID devices
+	SYSLIBS := -lusb-1.0
 endif
 ifeq ($(HW_OS),pc_linux64)
 	SYSLIBS := 
@@ -124,6 +192,7 @@ ifeq ($(HW_OS),pc_linux64)
 #	SYSLIBS := -ldl
 # For Freespace Devices
 #	SYSLIBS := -lfreespace
+	SYSLIBS := -lusb-1.0
 endif
 
 ifeq ($(HW_OS),sgi_irix)
@@ -134,7 +203,7 @@ ifeq ($(HW_OS),sgi_irix)
       SGI_ARCH := mips3
    endif
    OBJECT_DIR_SUFFIX := .$(SGI_ABI).$(SGI_ARCH)
-   CC := CC -$(SGI_ABI) -$(SGI_ARCH)
+   CC := CC -$(SGI_ABI) -$(SGI_ARCH) -LANG:std
    GL := -lgl
 endif
 
@@ -159,7 +228,7 @@ LIB_DIR := ../$(OBJ_DIR)
 override CFLAGS := $(CFLAGS) -I./ -I../ -I../quat -I../../libfreespace/include $(DEBUG_FLAGS) $(CFLAGS) -DTRUE=true =DFALSE=false
 override CXXFLAGS := $(CXXFLAGS) -I./ -I../ -I../quat -I../../libfreespace/include $(DEBUG_FLAGS) $(CXXFLAGS)
 override LFLAGS := $(LFLAGS) -L$(LIB_DIR) -L../quat/$(HW_OS)$(OBJECT_DIR_SUFFIX) $(LDFLAGS)
-VRPN_LIBS = -lvrpnserver -lvrpnatmel -lpthread
+VRPN_LIBS = -lvrpnserver -lvrpnatmel -lvrpngpsnmea -lpthread
 
 # Uncomment the following section and point them at the
 # currect diretories to compile with HDAPI under Cygwin.
@@ -175,6 +244,14 @@ VRPN_LIBS = -lvrpnserver -lvrpnatmel -lpthread
 #override LFLAGS += -L$(HDAPI_ROOT)/lib
 #SYSLIBS := $(SYSLIBS) -lHL -lHD -lHLU -lHDU
 
+# This is for the PHANToM/GHOST server on SGI (not tested on other plateform)
+# Put in comment if you don't want a PHANToM server.  GHOST expects SGI to
+# be defined during compile, whereas sgi seems to be the standard definition.
+#override CFLAGS += -I/usr/local/SensAble/GHOST/v31/include -DSGI
+#override CXXFLAGS += -I/usr/local/SensAble/GHOST/v31/include -DSGI
+#override LFLAGS += -L/usr/local/SensAble/GHOST/v31/lib
+#SYSLIBS := $(SYSLIBS) -lghost31_32
+
 ifdef INTERSENSE
   ifeq ($(HW_OS),powerpc_macosx)
 #     CFLAGS = -g -I../ -I../../quat -I../../isense -DMACOSX
@@ -187,11 +264,14 @@ ifdef INTERSENSE
      override CFLAGS += -I../../isense -DMACOSX
      override CXXFLAGS += -I../../isense -DMACOSX
      override LFLAGS += ../../isense/MacOSX/dlcompat.o
+	
   endif
 endif
 
-#uncomment the following line to include the PHASESPACE library
+#uncomment the following lines to include the PHASESPACE library
 #PHASESPACE := -L../../phasespace -lowlsock
+#CXXFLAGS += -I../../phasespace
+#CFLAGS += -I../../phasespace
 
 ifdef PHASESPACE
 #the rpath option may not work on all platforms, remove it if necessary.
@@ -222,12 +302,12 @@ $(OBJ_DIR)/%.o:	%.cpp
 	@[ -d $(OBJ_DIR) ] || mkdir -p $(OBJ_DIR)
 	$(CC) $(CXXFLAGS) -o $@ -c $<
 
-INSTALL_APPS := vrpn_server test_vrpn wiimote_head_tracker
-APPS := $(INSTALL_APPS) client_and_server test_mutex test_peerMutex \
+INSTALL_APPS := vrpn_server test_vrpn
+APPS := $(INSTALL_APPS) client_and_server test_mutexServer test_peerMutex \
 test_radamec_spi test_analogfly testimager_server test_auxiliary_logger \
-test_logging 
+test_logging testSharedObjectServer
 # test_freespace
-# testSharedObject
+# 
 
 all: $(APPS)
 
@@ -261,8 +341,8 @@ client_and_server:	$(OBJ_DIR)/client_and_server
 .PHONY:	sample_server
 sample_server:	$(OBJ_DIR)/sample_server
 
-.PHONY:	test_mutex
-test_mutex:	$(OBJ_DIR)/test_mutex
+.PHONY:	test_mutexServer
+test_mutexServer:	$(OBJ_DIR)/test_mutexServer
 
 .PHONY:	test_peerMutex
 test_peerMutex:	$(OBJ_DIR)/test_peerMutex
@@ -273,17 +353,14 @@ sample_analog:	$(OBJ_DIR)/sample_analog
 .PHONY:	forward
 forward:	$(OBJ_DIR)/forward
 
-.PHONY:	text
-text:	$(OBJ_DIR)/text
+.PHONY:	textServer
+textServer:	$(OBJ_DIR)/textServer
 
 .PHONY:	last_of_sequence
 last_of_sequence:	$(OBJ_DIR)/last_of_sequence
 
-.PHONY:	testSharedObject
-testSharedObject:	$(OBJ_DIR)/testSharedObject
-
-.PHONY:	wiimote_head_tracker
-wiimote_head_tracker:	$(OBJ_DIR)/wiimote_head_tracker
+.PHONY:	testSharedObjectServer
+testSharedObjectServer:	$(OBJ_DIR)/testSharedObjectServer
 
 $(OBJ_DIR)/InstantBuzzEffect.o: ghostEffects/InstantBuzzEffect.cpp
 	$(CC) $(CXXFLAGS) -o $@ -c $<
@@ -358,10 +435,10 @@ $(OBJ_DIR)/forward: $(OBJ_DIR)/forward.o  \
 		$(OBJ_DIR)/forward.o \
 		$(VRPN_LIBS) $(SYSLIBS) -lm
 
-$(OBJ_DIR)/text: $(OBJ_DIR)/text.o  \
+$(OBJ_DIR)/textServer: $(OBJ_DIR)/textServer.o  \
 			 $(LIB_DIR)/libvrpnserver.a
-	$(CC) $(LFLAGS) -o $(OBJ_DIR)/text \
-		$(OBJ_DIR)/text.o \
+	$(CC) $(LFLAGS) -o $(OBJ_DIR)/textServer \
+		$(OBJ_DIR)/textServer.o \
 		$(VRPN_LIBS) $(SYSLIBS) -lm
 
 $(OBJ_DIR)/sample_server:	$(OBJ_DIR)/sample_server.o \
@@ -370,10 +447,10 @@ $(OBJ_DIR)/sample_server:	$(OBJ_DIR)/sample_server.o \
 		$(OBJ_DIR)/sample_server.o \
 		$(VRPN_LIBS) $(SYSLIBS) -lm
 
-$(OBJ_DIR)/test_mutex:	$(OBJ_DIR)/test_mutex.o \
+$(OBJ_DIR)/test_mutexServer:	$(OBJ_DIR)/test_mutexServer.o \
 			$(LIB_DIR)/libvrpnserver.a
-	$(CC) $(LFLAGS) -o $(OBJ_DIR)/test_mutex \
-		$(OBJ_DIR)/test_mutex.o \
+	$(CC) $(LFLAGS) -o $(OBJ_DIR)/test_mutexServer \
+		$(OBJ_DIR)/test_mutexServer.o \
 		$(VRPN_LIBS) $(SYSLIBS) -lm
 
 $(OBJ_DIR)/test_peerMutex:	$(OBJ_DIR)/test_peerMutex.o \
@@ -395,17 +472,11 @@ $(OBJ_DIR)/last_of_sequence:	$(OBJ_DIR)/last_of_sequence.o \
 		$(VRPN_LIBS) $(SYSLIBS) -lm
 
 
-$(OBJ_DIR)/testSharedObject:	$(OBJ_DIR)/testSharedObject.o \
+$(OBJ_DIR)/testSharedObjectServer:	$(OBJ_DIR)/testSharedObjectServer.o \
 			$(LIB_DIR)/libvrpnserver.a
-	$(CC) $(LFLAGS) -o $(OBJ_DIR)/testSharedObject \
-		$(OBJ_DIR)/testSharedObject.o \
+	$(CC) $(LFLAGS) -o $(OBJ_DIR)/testSharedObjectServer \
+		$(OBJ_DIR)/testSharedObjectServer.o \
 		$(VRPN_LIBS) $(SYSLIBS) -lm
-
-$(OBJ_DIR)/wiimote_head_tracker:	$(OBJ_DIR)/wiimote_head_tracker.o \
-			$(LIB_DIR)/libvrpnserver.a
-	$(CC) $(LFLAGS) -o $(OBJ_DIR)/wiimote_head_tracker \
-		$(OBJ_DIR)/wiimote_head_tracker.o \
-		$(VRPN_LIBS) -lquat $(SYSLIBS) -lm
 
 install: all
 	-mkdir -p $(BIN_DIR)
@@ -426,9 +497,9 @@ endif
 $(OBJ_DIR)/vrpn.o:	vrpn.C
 $(OBJ_DIR)/vrpn_Generic_server_object.o:	vrpn_Generic_server_object.C
 $(OBJ_DIR)/forward.o:	forward.C
-$(OBJ_DIR)/text.o:	text.C
+$(OBJ_DIR)/textServer.o:	textServer.C
 $(OBJ_DIR)/sample_server.o:	sample_server.C
-$(OBJ_DIR)/test_mutex.o:	test_mutex.C
+$(OBJ_DIR)/test_mutexServer.o:	test_mutexServer.C
 $(OBJ_DIR)/test_peerMutex.o:	test_peerMutex.C
 $(OBJ_DIR)/sample_analog.o:	sample_analog.C
 

@@ -1,19 +1,18 @@
 #ifndef INCLUDED_ANALOGFLY
 #define INCLUDED_ANALOGFLY
 
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#ifndef _WIN32
-#include <sys/time.h>
-#endif
+#include <quat.h>                       // for q_matrix_type
+#include <stdio.h>                      // for NULL
 
-#include "vrpn_Tracker.h"
-#include "vrpn_Analog.h"
-#include "vrpn_Button.h"
+#include "vrpn_Analog.h"                // for vrpn_ANALOGCB, etc
+#include "vrpn_Button.h"                // for vrpn_BUTTONCB, etc
+#include "vrpn_Configure.h"             // for VRPN_API, VRPN_CALLBACK
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Tracker.h"               // for vrpn_Tracker
+#include "vrpn_Types.h"                 // for VRPN_FALSE, vrpn_FALSE
 
-#include <quat.h>
+class VRPN_API vrpn_Connection;
+struct vrpn_HANDLERPARAM;
 
 // This parameter is passed to the constructor for the AnalogFly; it describes
 // the channel mapping and parameters of that mapping, as well as the button
@@ -99,29 +98,27 @@ public:
 // change since the last update, in which case they are generated no faster
 // than update_rate. 
 
+// If worldFrame is TRUE, then translations and rotations take place in the
+// world frame, rather than the local frame. Useful for a simulated wand
+// when doing desktop testing of immersive apps - easier to keep under control.
+
 class VRPN_API vrpn_Tracker_AnalogFly : public vrpn_Tracker {
   public:
     vrpn_Tracker_AnalogFly (const char * name, vrpn_Connection * trackercon,
 			    vrpn_Tracker_AnalogFlyParam * params,
-                            float update_rate, vrpn_bool absolute = vrpn_FALSE,
-                            vrpn_bool reportChanges = VRPN_FALSE);
+                            float update_rate, bool absolute = vrpn_FALSE,
+                            bool reportChanges = VRPN_FALSE, bool worldFrame = VRPN_FALSE);
 
     virtual ~vrpn_Tracker_AnalogFly (void);
 
     virtual void mainloop ();
-    virtual void reset (void);
-
-    void update (q_matrix_type &);
-
-    static void VRPN_CALLBACK handle_joystick (void *, const vrpn_ANALOGCB);
-    static int VRPN_CALLBACK handle_newConnection (void *, vrpn_HANDLERPARAM);
 
   protected:
-
     double	    d_update_interval;	//< How long to wait between sends
     struct timeval  d_prevtime;		//< Time of the previous report
-    vrpn_bool	    d_absolute;		//< Report absolute (vs. differential)?
-    vrpn_bool       d_reportChanges;
+    bool	    d_absolute;		//< Report absolute (vs. differential)?
+    bool       d_reportChanges;
+    bool       d_worldFrame;
 
     vrpn_TAF_fullaxis	d_x, d_y, d_z, d_sx, d_sy, d_sz;
     vrpn_Button_Remote	* d_reset_button;
@@ -130,21 +127,24 @@ class VRPN_API vrpn_Tracker_AnalogFly : public vrpn_Tracker {
     vrpn_Button_Remote	* d_clutch_button;
     int			d_clutch_which;
     bool                d_clutch_engaged;
+    bool		d_clutch_was_off;
 
     q_matrix_type d_initMatrix, d_currentMatrix, d_clutchMatrix;
 
     void    update_matrix_based_on_values (double time_interval);
     void    convert_matrix_to_tracker (void);
 
-    vrpn_bool shouldReport (double elapsedInterval) const;
+    bool shouldReport (double elapsedInterval) const;
 
     int setup_channel (vrpn_TAF_fullaxis * full);
     int teardown_channel (vrpn_TAF_fullaxis * full);
+    virtual void reset(void);
 
     static void	VRPN_CALLBACK handle_analog_update (void * userdata,
                                       const vrpn_ANALOGCB info);
     static void VRPN_CALLBACK handle_reset_press (void * userdata, const vrpn_BUTTONCB info);
     static void VRPN_CALLBACK handle_clutch_press (void * userdata, const vrpn_BUTTONCB info);
+    static int VRPN_CALLBACK handle_newConnection(void *, vrpn_HANDLERPARAM);
 };
 
 #endif

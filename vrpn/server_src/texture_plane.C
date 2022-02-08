@@ -3,7 +3,7 @@
 #include "texture_plane.h"
 
 // So we don't have #defines throughout the code that we forget to fix.
-#if defined(SGI) || defined (__CYGWIN__) || defined(linux)
+#if defined(sgi) || defined (__CYGWIN__) || defined(linux)
 #define init_mutex(x) pthread_mutex_init(x,NULL);
 #define get_mutex(x)  pthread_mutex_lock(x)
 #define release_mutex(x) pthread_mutex_unlock(x);
@@ -278,7 +278,7 @@ void DynamicPlane::planeEquationToTransform(vrpn_HapticPlane &prev_plane,
         axis = crossprod/sintheta;
     }
     theta = asin(sintheta);
-    if (costheta < 0) theta = M_PI - theta;
+    if (costheta < 0) theta = VRPN_PI - theta;
 
     // set the incremental rotation
 #ifdef	VRPN_USE_HDAPI
@@ -846,24 +846,24 @@ double TexturePlane::computeHeight(double x, double z) const
 // for texture: compute height as a function of radius from texture origin
 double TexturePlane::computeHeight(double r) const
 {
-	double k = 2*M_PI*texWN;
+	double k = 2*VRPN_PI*texWN;
 	return texAmp*cos(k*r);
 }
 
 // for texture:
 vrpn_HapticVector TexturePlane::computeNormal(double x, double z) const
 {
-	double k = 2*M_PI*texWN;
+	double k = 2*VRPN_PI*texWN;
 	double r_sq = x*x + z*z;
 	double r = sqrt(r_sq);
 
 	vrpn_HapticVector normal;
 
 	if (r != 0){
-		normal.set(texAmp*x*k*sin(k*r)/r, 1.0, texAmp*z*k*sin(k*r)/r);
+		normal = vrpn_HapticVector(texAmp*x*k*sin(k*r)/r, 1.0, texAmp*z*k*sin(k*r)/r);
 	}
 	else{
-		normal.set(0, 1.0, 0);
+		normal = vrpn_HapticVector(0, 1.0, 0);
 	}
 	return normal;
 	

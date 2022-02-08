@@ -12,18 +12,15 @@
 // depends:     libnifalcon-1.0.1+, libusb-1.0, boost 1.39, VRPN 07_27
 // tested on:   Linux x86_64 w/ gcc 4.4.1
 
-#include <ctype.h>
-#include <string.h>
-
 #include "vrpn_Tracker_NovintFalcon.h"
 
-#if defined(VRPN_USE_LIBNIFALCON)
-#include "boost/shared_ptr.hpp"
-#include "boost/array.hpp"
-#include "boost/ptr_container/ptr_vector.hpp"
+#ifdef VRPN_USE_LIBNIFALCON
+#include <vector>
+#include <array>
+#include <memory>
 #include "falcon/core/FalconDevice.h"
-#include "falcon/grip/FalconGripFourButton.h"
 #include "falcon/firmware/FalconFirmwareNovintSDK.h"
+#include "falcon/grip/FalconGripFourButton.h"
 #include "falcon/kinematic/FalconKinematicStamper.h"
 #include "falcon/util/FalconFirmwareBinaryNvent.h"
 
@@ -40,7 +37,7 @@
 /**************************************************************************/
 
 // save us some typing
-typedef boost::array<double, 3> d_vector;
+typedef std::array<double, 3> d_vector;
 
 /// allow to add two vectors
 static d_vector operator+(const d_vector &a,const d_vector &b)
@@ -97,7 +94,12 @@ public:
             if (m_flags & KINE_STAMPER) {
                 m_falconDevice->setFalconKinematic<libnifalcon::FalconKinematicStamper>();
             } else {
-                delete m_falconDevice;
+                try {
+                  delete m_falconDevice;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_NovintFalcon_Device::vrpn_NovintFalcon_Device(): delete failed\n");
+                  return;
+                }
                 m_falconDevice=NULL;
                 return;
             }
@@ -105,7 +107,12 @@ public:
             if (m_flags & GRIP_FOURBUTTON) {
                 m_falconDevice->setFalconGrip<libnifalcon::FalconGripFourButton>();
             } else {
-                delete m_falconDevice;
+                try {
+                  delete m_falconDevice;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_NovintFalcon_Device::vrpn_NovintFalcon_Device(): delete failed\n");
+                  return;
+                }
                 m_falconDevice=NULL;
                 return;
             }
@@ -116,9 +123,22 @@ public:
         fprintf(stderr, "Closing Falcon device %d.\n", m_flags & MASK_DEVICEIDX);
 #endif
         if (m_falconDevice) {
+            std::shared_ptr<libnifalcon::FalconFirmware> f;
+            f=m_falconDevice->getFalconFirmware();
+            if(f) {
+                f->setLEDStatus(libnifalcon::FalconFirmware::RED_LED |
+                                libnifalcon::FalconFirmware::BLUE_LED |
+                                libnifalcon::FalconFirmware::GREEN_LED);
+                for (int i=0; !m_falconDevice->runIOLoop() && i < FALCON_NUM_RETRIES; ++i) continue;
+            }
             m_falconDevice->close();
         }
-        delete m_falconDevice;
+        try {
+          delete m_falconDevice;
+        } catch (...) {
+          fprintf(stderr, "vrpn_NovintFalcon_Device::~vrpn_NovintFalcon_Device(): delete failed\n");
+          return;
+        }
         m_flags=-1;
     };
 
@@ -153,14 +173,11 @@ public:
             int i;
             // 10 chances to load the firmware.
             for (i=0; i<FALCON_NUM_RETRIES; ++i) {
-                if(!m_falconDevice->getFalconFirmware()->loadFirmware(false, libnifalcon::NOVINT_FALCON_NVENT_FIRMWARE_SIZE, const_cast<uint8_t*>(libnifalcon::NOVINT_FALCON_NVENT_FIRMWARE)))
+                if(!m_falconDevice->getFalconFirmware()->loadFirmware(true, libnifalcon::NOVINT_FALCON_NVENT_FIRMWARE_SIZE, const_cast<uint8_t*>(libnifalcon::NOVINT_FALCON_NVENT_FIRMWARE)))
                 {
                     fprintf(stderr, "Firmware loading attempt %d failed.\n", i);
-                    // Completely close and reopen device and try again
-                    m_falconDevice->close();
-                    if(!m_falconDevice->open(devidx))
-                    {
-                        fprintf(stderr, "Cannot open falcon device %d - Lib Error Code: %d - Device Error Code: %d\n",
+                    if(i==FALCON_NUM_RETRIES-1){
+                        fprintf(stderr, "Cannot load falcon device %d firmware - Device Error Code: %d - Comm Lib Error Code: %d\n",
                                 devidx, m_falconDevice->getErrorCode(), m_falconDevice->getFalconComm()->getDeviceErrorCode());
                         return false;
                     }
@@ -173,13 +190,14 @@ public:
             }
         } else {
 #ifdef VERBOSE
+
             fprintf(stderr, "Falcon Firmware already loaded.\n");
 #endif
         }
 
         int i;
         bool message = false;
-        boost::shared_ptr<libnifalcon::FalconFirmware> f;
+        std::shared_ptr<libnifalcon::FalconFirmware> f;
         f=m_falconDevice->getFalconFirmware();
         for (i=0; !m_falconDevice->runIOLoop() && i < FALCON_NUM_RETRIES; ++i) continue;
         while(1) { // XXX: add timeout to declare device dead after a while.
@@ -236,32 +254,16 @@ public:
 
         int i;
         for (i=0; !m_falconDevice->runIOLoop() && i < FALCON_NUM_RETRIES; ++i) continue;
+               if ( i == FALCON_NUM_RETRIES )
+                       return false;
 
         // we have no orientation of the effector.
-        // so we just pick one. to tell them apart
-        // more easily, we just give each a different
-        // orientation.
+        // so we just pick the identity quaternion.
         if (quat) {
-            switch (m_flags & MASK_DEVICEIDX) {
-              case 0:
-                  quat[0] =  0.0;
-                  quat[1] =  0.0;
-                  quat[2] =  1.0;
-                  quat[3] =  0.0;
-                  break;
-              case 1:
-                  quat[0] =  1.0;
-                  quat[1] =  0.0;
-                  quat[2] =  0.0;
-                  quat[3] =  0.0;
-                  break;
-              default:
-                  quat[0] =  1.0;
-                  quat[1] =  0.0;
-                  quat[2] =  0.0;
-                  quat[3] =  0.0;
-                  break;
-            }
+            quat[0] =  0.0;
+            quat[1] =  0.0;
+            quat[2] =  0.0;
+            quat[3] =  1.0;
         }
 
         if (vel_quat) {
@@ -408,7 +410,7 @@ public:
     /// calculate the effect force
     d_vector calcForce(const d_vector &pos) {
         d_vector force, offset;
-        force.assign(0.0);
+        force.fill(0.0);
         if (m_active) {
             // apply damping to effect values
             const double mix = 1.0 - m_damping;
@@ -451,7 +453,7 @@ protected:
     double m_cutoff;            /// force cutoff radius
     d_vector m_origin;          /// origin of effect
     d_vector m_addforce;        /// additional constant force
-    double m_jacobian[3][3];    /// describes increase in force away from origin in differnt directions.
+    double m_jacobian[3][3];    /// describes increase in force away from origin in different directions.
     double m_newcut;            /// new force cutoff radius
     d_vector m_neworig;         /// new effect origin handed over at update
     d_vector m_newadd;          /// new additional constant force
@@ -470,7 +472,7 @@ static int VRPN_CALLBACK handle_forcefield_change_message(void *userdata, vrpn_H
 /// class to collect all force generating objects.
 class vrpn_NovintFalcon_ForceObjects {
 public:
-    boost::ptr_vector<ForceFieldEffect> m_FFEffects;
+    std::vector<ForceFieldEffect*> m_FFEffects;
 
 protected:
     d_vector m_curforce; //< collected force value
@@ -480,8 +482,8 @@ protected:
 public:
     /// constructor
     vrpn_NovintFalcon_ForceObjects() {
-            m_curforce.assign(0.0);
-            m_curpos.assign(0.0);
+            m_curforce.fill(0.0);
+            m_curpos.fill(0.0);
     };
     /// destructor
     ~vrpn_NovintFalcon_ForceObjects() {};
@@ -499,7 +501,7 @@ public:
         // force field objects
         int nobj = m_FFEffects.size();
         for (i=0; i<nobj; ++i) {
-            m_curforce = m_curforce + m_FFEffects[i].calcForce (m_curpos);
+            m_curforce = m_curforce + m_FFEffects[i]->calcForce (m_curpos);
         }
         return m_curforce;
     };
@@ -512,7 +514,7 @@ vrpn_Tracker_NovintFalcon::vrpn_Tracker_NovintFalcon(const char *name,
                                                      const char *grip,
                                                      const char *kine,
                                                      const char *damp)
-        : vrpn_Tracker(name, c), vrpn_Button(name, c),
+        : vrpn_Tracker(name, c), vrpn_Button_Filter(name, c),
           vrpn_ForceDevice(name, c), m_dev(NULL), m_obj(NULL), m_update_rate(1000.0), m_damp(0.9)
 {
     m_devflags=vrpn_NovintFalcon_Device::MASK_DEVICEIDX & devidx;
@@ -521,7 +523,7 @@ vrpn_Tracker_NovintFalcon::vrpn_Tracker_NovintFalcon(const char *name,
             m_devflags |= vrpn_NovintFalcon_Device::GRIP_FOURBUTTON;
             vrpn_Button::num_buttons = 4;
         } else {
-            fprintf(stderr, "WARNING: Unknown grip for Novint Falcon: %s \n", grip);
+            fprintf(stderr, "WARNING: Unknown grip for Novint Falcon #%d: %s \n", devidx, grip);
             m_devflags = -1;
             return;
         }
@@ -531,7 +533,7 @@ vrpn_Tracker_NovintFalcon::vrpn_Tracker_NovintFalcon(const char *name,
         if (0 == strcmp(kine,"stamper")) {
             m_devflags |= vrpn_NovintFalcon_Device::KINE_STAMPER;
         } else {
-            fprintf(stderr, "WARNING: Unknown kinematic model for Novint Falcon: %s \n", kine);
+            fprintf(stderr, "WARNING: Unknown kinematic model for Novint Falcon #%d: %s \n", devidx, kine);
             m_devflags = -1;
             return;
         }
@@ -545,7 +547,7 @@ vrpn_Tracker_NovintFalcon::vrpn_Tracker_NovintFalcon(const char *name,
             fprintf(stderr, "WARNING: Ignoring illegal force effect damping factor: %g \n", val);
         }
     }
-	clear_values();
+    clear_values();
 
     if (register_autodeleted_handler(forcefield_message_id,
                                      handle_forcefield_change_message, this, vrpn_ForceDevice::d_sender_id)) {
@@ -561,15 +563,25 @@ void vrpn_Tracker_NovintFalcon::clear_values()
     // nothing to do
     if (m_devflags < 0) return;
 
-	int i;
-	for (i=0; i <vrpn_Button::num_buttons; i++)
-		vrpn_Button::buttons[i] = vrpn_Button::lastbuttons[i] = 0;
+    int i;
+    for (i=0; i <vrpn_Button::num_buttons; i++)
+        vrpn_Button::buttons[i] = vrpn_Button::lastbuttons[i] = 0;
 
-    if (m_obj) delete m_obj;
-    m_obj = new vrpn_NovintFalcon_ForceObjects;
+    if (m_obj) {
+      try {
+        delete m_obj;
+      } catch (...) {
+        fprintf(stderr, "vrpn_Tracker_NovintFalcon::clear_values(): delete failed\n");
+        return;
+      }
+    }
+    try { m_obj = new vrpn_NovintFalcon_ForceObjects; }
+    catch (...) { m_obj = NULL; return; }
 
     // add dummy effect object
-    ForceFieldEffect *ffe = new ForceFieldEffect;
+    ForceFieldEffect *ffe;
+    try { ffe = new ForceFieldEffect; }
+    catch (...) { return; }
     ffe->setDamping(m_damp);
     ffe->stop();
     m_obj->m_FFEffects.push_back(ffe);
@@ -577,10 +589,13 @@ void vrpn_Tracker_NovintFalcon::clear_values()
 
 vrpn_Tracker_NovintFalcon::~vrpn_Tracker_NovintFalcon()
 {
-    if (m_dev)
-        delete m_dev;
-    if (m_obj)
-        delete m_obj;
+  try {
+    if (m_dev) delete m_dev;
+    if (m_obj) delete m_obj;
+  } catch (...) {
+    fprintf(stderr, "vrpn_Tracker_NovintFalcon::~vrpn_Tracker_NovintFalcon(): delete failed\n");
+    return;
+  }
 }
 
 void vrpn_Tracker_NovintFalcon::reset()
@@ -589,31 +604,41 @@ void vrpn_Tracker_NovintFalcon::reset()
     // nothing to do
     if (m_devflags < 0) return;
 
-	static int numResets = 0;	// How many resets have we tried?
-	int ret, i;
-    numResets++;		  	// We're trying another reset
+    int ret, i;
+    clear_values();
 
-	clear_values();
+    fprintf(stderr, "Resetting the NovintFalcon #%d\n",
+        vrpn_NovintFalcon_Device::MASK_DEVICEIDX & m_devflags);
 
-	fprintf(stderr, "Resetting the NovintFalcon (attempt %d)\n", numResets);
-
-    if (m_dev)
+    if (m_dev) {
+      try {
         delete m_dev;
+      } catch (...) {
+        fprintf(stderr, "vrpn_Tracker_NovintFalcon::reset(): delete failed\n");
+        return;
+      }
+    }
 
-    m_dev = new vrpn_NovintFalcon_Device(m_devflags);
-    if (!m_dev) {
-		status = vrpn_TRACKER_FAIL;
-		return;
-	}
+    try { m_dev = new vrpn_NovintFalcon_Device(m_devflags); }
+    catch (...) {
+#ifdef VERBOSE
+        fprintf(stderr, "Device constructor failed!\n");
+#endif
+        status = vrpn_TRACKER_FAIL;
+        m_dev = NULL;
+        return;
+    }
 
     if (!m_dev->init()) {
-		status = vrpn_TRACKER_FAIL;
-		return;
-	}
+#ifdef VERBOSE
+                fprintf(stderr, "Device init failed!\n");
+#endif
+        status = vrpn_TRACKER_FAIL;
+        return;
+    }
 
-	fprintf(stderr, "Reset Completed.\n");
-	numResets = 0;	// clear variable to avoid confusion.
-	status = vrpn_TRACKER_SYNCING;	// We're trying for a new reading
+    fprintf(stderr, "Reset Completed.\n");
+    status = vrpn_TRACKER_SYNCING;    // We're trying for a new reading
 }
 
 int vrpn_Tracker_NovintFalcon::get_report(void)
@@ -634,6 +659,7 @@ int vrpn_Tracker_NovintFalcon::get_report(void)
                 return 0;
             }
         } else {
+            status = vrpn_TRACKER_FAIL;
             return 0;
         }
     }
@@ -684,8 +710,8 @@ int vrpn_Tracker_NovintFalcon::update_forcefield_effect(vrpn_HANDLERPARAM p)
     decode_forcefield(p.buffer, p.payload_len, center, force, jacobian, &radius);
     // XXX: only one force field effect. sufficient for VMD.
     // we have just updated our published position and can use that
-    m_obj->m_FFEffects[0].start();
-    m_obj->m_FFEffects[0].setForce(center, force, jacobian, radius);
+    m_obj->m_FFEffects[0]->start();
+    m_obj->m_FFEffects[0]->setForce(center, force, jacobian, radius);
     return 0;
 }
 
@@ -693,7 +719,7 @@ int vrpn_Tracker_NovintFalcon::update_forcefield_effect(vrpn_HANDLERPARAM p)
 void vrpn_Tracker_NovintFalcon::mainloop()
 {
     struct timeval current_time;
-	server_mainloop();
+    server_mainloop();
 
     // no need to report more often than we can poll the device
     vrpn_gettimeofday(&current_time, NULL);
@@ -718,15 +744,14 @@ void vrpn_Tracker_NovintFalcon::mainloop()
               break;
 
           case vrpn_TRACKER_FAIL:
-              fprintf(stderr, "NovintFalcon failed, trying to reset (Try power cycle if more than 4 attempts made)\n");
-              status = vrpn_TRACKER_RESETTING;
               break;
 
           default:
+              fprintf(stderr, "NovintFalcon #%d , unknown status message: %d)\n",
+                  vrpn_NovintFalcon_Device::MASK_DEVICEIDX & m_devflags, status);
               break;
         }
     }
 }
-
 
 #endif

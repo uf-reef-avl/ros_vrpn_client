@@ -43,15 +43,19 @@
 	DEALINGS IN THE SOFTWARE.
 */
 
-// Standard includes
-#include <string.h>
-#include <math.h>
-#include <stdio.h>
-#include <algorithm>
-#include <iostream>
+
 
 // Local Includes
+#include "quat.h"                       // for q_xyz_quat_type, q_vec_copy, etc
+#include "vrpn_Connection.h"            // for vrpn_Connection, etc
 #include "vrpn_Tracker_WiimoteHead.h"
+#include "vrpn_Types.h"                 // for vrpn_float64
+
+// Standard includes
+#include <math.h>                       // for tan, atan2, sqrt
+#include <stdio.h>                      // for NULL, fprintf, stderr
+#include <algorithm>                    // for swap
+#include <iostream>                     // for operator<<, basic_ostream, etc
 
 #undef	VERBOSE
 
@@ -77,11 +81,6 @@ const double radPerPx = fovX / xResSensor;
 const double cvtDistToAngle = radPerPx / two;
 /// @}
 
-static double duration(struct timeval t1, struct timeval t2) {
-	return (t1.tv_usec - t2.tv_usec) / 1000000.0 +
-	       (t1.tv_sec - t2.tv_sec);
-}
-
 /** @brief Utility function to set a quat equal to the identity rotation
  */
 #define MAKE_IDENTITY_QUAT(dest) \
@@ -94,11 +93,11 @@ static double duration(struct timeval t1, struct timeval t2) {
 
 
 vrpn_Tracker_WiimoteHead::vrpn_Tracker_WiimoteHead(const char* name,
-		vrpn_Connection* trackercon,
-		const char* wiimote,
-		float update_rate,
-		float led_spacing) :
-	vrpn_Tracker (name, trackercon),
+        vrpn_Connection* trackercon,
+        const char* wiimote,
+        float update_rate,
+        float led_spacing) :
+	vrpn_Tracker(name, trackercon),
 	d_name(wiimote),
 	d_update_interval(update_rate ? (1.0 / update_rate) : 1.0 / 60.0),
 	d_blobDistance(led_spacing),
@@ -113,7 +112,7 @@ vrpn_Tracker_WiimoteHead::vrpn_Tracker_WiimoteHead(const char* name,
 	if (wiimote == NULL) {
 		d_name = NULL;
 		fprintf(stderr, "vrpn_Tracker_WiimoteHead: "
-				"Can't start without a valid specified Wiimote device!");
+		        "Can't start without a valid specified Wiimote device!");
 		return;
 	}
 
@@ -123,7 +122,7 @@ vrpn_Tracker_WiimoteHead::vrpn_Tracker_WiimoteHead(const char* name,
 	// Whenever we get a connection, set a flag so we make sure to send an
 	// update. Set up a handler to do this.
 	register_autodeleted_handler(d_connection->register_message_type(vrpn_got_connection),
-				     handle_connection, this);
+	                             handle_connection, this);
 
 	//--------------------------------------------------------------------
 	// Set the current matrix to identity, the current timestamp to "now",
@@ -139,17 +138,24 @@ vrpn_Tracker_WiimoteHead::vrpn_Tracker_WiimoteHead(const char* name,
 	_convert_pose_to_tracker();
 }
 
-vrpn_Tracker_WiimoteHead::~vrpn_Tracker_WiimoteHead (void) {
+vrpn_Tracker_WiimoteHead::~vrpn_Tracker_WiimoteHead(void) {
 
 	// If the analog pointer is NULL, we're done.
-	if (d_ana == NULL) { return; }
+	if (d_ana == NULL) {
+		return;
+	}
 
 	// Turn off the callback handler
-	int	ret;
-	ret = d_ana->unregister_change_handler(this, handle_analog_update);
+	int	ret = d_ana->unregister_change_handler(this, handle_analog_update);
+	(void)ret;
 
 	// Delete the analog device.
-	delete d_ana;
+        try {
+          delete d_ana;
+        } catch (...) {
+          fprintf(stderr, "vrpn_Tracker_WiimoteHead::~vrpn_Tracker_WiimoteHead(): delete failed\n");
+          return;
+        }
 	d_ana = NULL;
 }
 
@@ -167,22 +173,29 @@ void vrpn_Tracker_WiimoteHead::setup_wiimote() {
 		// Turn off the callback handler and delete old analog
 		// if we already have an analog source
 		d_ana->unregister_change_handler(this, handle_analog_update);
-		delete d_ana;
+                try {
+                  delete d_ana;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_Tracker_WiimoteHead::setup_wiimote(): delete failed\n");
+                  return;
+                }
 		d_ana = NULL;
 	}
 
 	// Open the analog device and point the remote at it.
 	// If the name starts with the '*' character, use the server
 	// connection rather than making a new one.
-	if (d_name[0] == '*') {
-		d_ana = new vrpn_Analog_Remote(&(d_name[1]), d_connection);
-	} else {
-		d_ana = new vrpn_Analog_Remote(d_name);
-	}
+        try {
+	  if (d_name[0] == '*') {
+		  d_ana = new vrpn_Analog_Remote(&(d_name[1]), d_connection);
+	  } else {
+		  d_ana = new vrpn_Analog_Remote(d_name);
+	  }
+        } catch (...) { d_ana = NULL; }
 
 	if (d_ana == NULL) {
 		fprintf(stderr, "vrpn_Tracker_WiimoteHead: "
-				"Can't open Analog %s\n", d_name);
+		        "Can't open Analog %s\n", d_name);
 		return;
 	}
 
@@ -190,8 +203,13 @@ void vrpn_Tracker_WiimoteHead::setup_wiimote() {
 	int ret = d_ana->register_change_handler(this, handle_analog_update);
 	if (ret == -1) {
 		fprintf(stderr, "vrpn_Tracker_WiimoteHead: "
-				"Can't setup change handler on Analog %s\n", d_name);
-		delete d_ana;
+		        "Can't setup change handler on Analog %s\n", d_name);
+                try {
+                  delete d_ana;
+                } catch (...) {
+                  fprintf(stderr, "vrpn_Tracker_WiimoteHead::setup_wiimote(): delete failed\n");
+                  return;
+                }
 		d_ana = NULL;
 		return;
 	}
@@ -214,7 +232,7 @@ void vrpn_Tracker_WiimoteHead::mainloop() {
 	// See if we have new data, or if it has been too long since our last
 	// report.  Send a new report in either case.
 	vrpn_gettimeofday(&now, NULL);
-	double interval = duration(now, d_prevtime);
+	double interval = vrpn_TimevalDurationSeconds(now, d_prevtime);
 
 	if (_should_report(interval)) {
 		// Figure out the new matrix based on the current values and
@@ -265,14 +283,14 @@ void vrpn_Tracker_WiimoteHead::report() {
 		char      msgbuf[1000];
 		int       len = encode_to(msgbuf);
 		if (d_connection->pack_message(len, vrpn_Tracker::timestamp,
-					       position_m_id, d_sender_id, msgbuf,
-					       vrpn_CONNECTION_LOW_LATENCY)) {
+		                               position_m_id, d_sender_id, msgbuf,
+		                               vrpn_CONNECTION_LOW_LATENCY)) {
 			fprintf(stderr, "vrpn_Tracker_WiimoteHead: "
-					"cannot write message: tossing\n");
+			        "cannot write message: tossing\n");
 		}
 	} else {
 		fprintf(stderr, "vrpn_Tracker_WiimoteHead: "
-				"No valid connection\n");
+		        "No valid connection\n");
 	}
 
 	// We just sent a report, so reset the time
@@ -284,11 +302,13 @@ void vrpn_Tracker_WiimoteHead::report() {
 void vrpn_Tracker_WiimoteHead::handle_analog_update(void* userdata, const vrpn_ANALOGCB info) {
 	vrpn_Tracker_WiimoteHead* wh = (vrpn_Tracker_WiimoteHead*)userdata;
 
-	if (!wh) { return; }
+	if (!wh) {
+		return;
+	}
 	if (!wh->d_contact) {
 #ifdef VERBOSE
 		fprintf(stderr, "vrpn_Tracker_WiimoteHead: "
-				"got first report from Wiimote!\n");
+		        "got first report from Wiimote!\n");
 #endif
 	}
 
@@ -298,9 +318,9 @@ void vrpn_Tracker_WiimoteHead::handle_analog_update(void* userdata, const vrpn_A
 		firstchan = i * 3 + 4;
 		// -1 should signal a missing blob, but experimentally
 		// we sometimes get 0 instead
-		if (   info.channel[firstchan] > 0
-			&& info.channel[firstchan + 1] > 0
-			&& info.channel[firstchan + 2] > 0) {
+		if (info.channel[firstchan] > 0
+		        && info.channel[firstchan + 1] > 0
+		        && info.channel[firstchan + 2] > 0) {
 			wh->d_vX[i] = info.channel[firstchan];
 			wh->d_vY[i] = info.channel[firstchan + 1];
 			wh->d_vSize[i] = info.channel[firstchan + 2];

@@ -2,11 +2,13 @@
  *   vrpn_inertiamouse.C
  */
 
-#include "vrpn_inertiamouse.h"
-#include "vrpn_Shared.h"
-#include "vrpn_Serial.h"
+#include <math.h>                       // for fabs
+#include <stdio.h>                      // for fprintf, stderr, NULL
+#include "vrpn_Shared.h"                // for timeval, vrpn_gettimeofday
 
-#include <math.h>
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_ERROR
+#include "vrpn_Serial.h"
+#include "vrpn_inertiamouse.h"
 
 #undef VERBOSE
 
@@ -20,18 +22,18 @@ namespace {
         
         MAX_TIME_INTERVAL = 2000000 // max time between reports (usec)
     };
-}
+} // namespace
 vrpn_inertiamouse::vrpn_inertiamouse (const char* name, 
                                       vrpn_Connection * c,
                                       const char* port, 
                                       int baud_rate)
     : vrpn_Serial_Analog (name, c, port, baud_rate)
-    , vrpn_Button (name, c)
+    , vrpn_Button_Filter (name, c)
     , numbuttons_ (Buttons)
     , numchannels_ (Channels)
-    , null_radius_ (0)
-    , bufcount_ (0)
     , expected_chars_ (1)
+    , bufcount_ (0)
+    , null_radius_ (0)
     , dcb_ ()
     , lp_ ()
 {
@@ -39,9 +41,8 @@ vrpn_inertiamouse::vrpn_inertiamouse (const char* name,
     vrpn_Analog::num_channel = numchannels_;
 
     vel_ = new double[numchannels_];
-    if (vel_ == NULL) {
-      fprintf(stderr,"vrpn_inertiamouse::vrpn_inertiamouse(): Out of memory\n");
-    }
+
+    vrpn_gettimeofday(&timestamp, NULL);	// Set watchdog now
     
     clear_values();
     
@@ -55,7 +56,10 @@ vrpn_inertiamouse::create (const char* name,
         const char* port, 
         int baud_rate)
 {
-    return new vrpn_inertiamouse (name, c, port, baud_rate);
+  vrpn_inertiamouse *ret = NULL;
+  try { ret = new vrpn_inertiamouse(name, c, port, baud_rate); }
+  catch (...) { return NULL; }
+  return ret;
 }
 
 
@@ -78,7 +82,7 @@ int vrpn_inertiamouse::reset(void)
     
     status_ = STATUS_SYNCING;
     
-    gettimeofday(&timestamp, NULL);	// Set watchdog now
+    vrpn_gettimeofday(&timestamp, NULL);	// Set watchdog now
     return 0;
 }
 
@@ -114,7 +118,7 @@ int vrpn_inertiamouse::get_report(void)
         }
 
         bufcount_ = 1;
-        gettimeofday (&timestamp, NULL);
+        vrpn_gettimeofday (&timestamp, NULL);
 
         status_ = STATUS_READING;
     }
@@ -156,6 +160,13 @@ int vrpn_inertiamouse::get_report(void)
             packet |= (buffer_[++nextchar] & 0xf0) >> 4;
 
             int chnl = (packet >> 10) & 7;
+            if (chnl >= Channels) {
+               status_ = STATUS_SYNCING;
+               send_text_message("vrpn_inertiamouse: Too-large channel value", 
+		  timestamp, 
+		  vrpn_TEXT_ERROR);
+               return 0;
+            }
             int acc = packet & 0x3ff; // 10 bits
             
             // normalize to interval [-1,1]
@@ -166,7 +177,7 @@ int vrpn_inertiamouse::get_report(void)
 //            normval *= 1.5;
 
             // update rotation data
-            if (chnl == 4 || chnl == 5) {
+            if ( (chnl == 4) || (chnl == 5) ) {
                 channel[chnl] = normval;
                 break;
             }

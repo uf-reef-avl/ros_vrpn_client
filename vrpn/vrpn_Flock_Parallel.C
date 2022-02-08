@@ -28,30 +28,15 @@
 // If you want to try polling instead of stream mode, just set define POLL
 // #define POLL
 
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <ctype.h>
+#include <stdio.h>                      // for fprintf, stderr, NULL, etc
 
-#ifdef linux
-#include <termios.h>
-#endif
-
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#endif
-
-#include "vrpn_Tracker.h"
+#include "vrpn_BaseClass.h"             // for ::vrpn_TEXT_ERROR
 #include "vrpn_Flock_Parallel.h"
-#include "vrpn_Serial.h"
+#include "vrpn_Serial.h"                // for vrpn_drain_output_buffer, etc
+#include "vrpn_Shared.h"                // for timeval, vrpn_SleepMsecs, etc
+#include "vrpn_Tracker.h"               // for vrpn_TRACKER_FAIL, etc
+
+class VRPN_API vrpn_Connection;
 
 // output a status msg every status_msg_secs
 #define STATUS_MSG
@@ -105,7 +90,12 @@ vrpn_Tracker_Flock_Parallel::~vrpn_Tracker_Flock_Parallel() {
   // have all slaves shut down (they just send a 'B' -- slaves 
   // can't run or sleep
   for (int i=0;i<cSensors;i++) {
-    delete rgSlaves[i];
+    try {
+      delete rgSlaves[i];
+    } catch (...) {
+      fprintf(stderr, "vrpn_Tracker_Flock_Parallel::~vrpn_Tracker_Flock_Parallel(): delete failed\n");
+      return;
+    }
   }
 
   // now regular flock destructor will be called (just as we need)
@@ -332,13 +322,7 @@ void vrpn_Tracker_Flock_Parallel_Slave::reset()
 // wait for first report)
 
 // Allow enough time for startup of many sensors -- 1 second per sensor
-#define MAX_TIME_INTERVAL       (MAX_SENSORS*1000000)
-
-static	unsigned long	duration(struct timeval t1, struct timeval t2)
-{
-	return (t1.tv_usec - t2.tv_usec) +
-	       1000000L * (t1.tv_sec - t2.tv_sec);
-}
+#define MAX_TIME_INTERVAL       (VRPN_FLOCK_MAX_SENSORS*1000000)
 
 void vrpn_Tracker_Flock_Parallel_Slave::mainloop()
 {
@@ -363,8 +347,10 @@ void vrpn_Tracker_Flock_Parallel_Slave::mainloop()
 	}
 	struct timeval current_time;
 	vrpn_gettimeofday(&current_time, NULL);
-	if ( duration(current_time,timestamp) > MAX_TIME_INTERVAL) {
-		fprintf(stderr,"Tracker failed to read... current_time=%ld:%ld, timestamp=%ld:%ld\n",current_time.tv_sec, current_time.tv_usec, timestamp.tv_sec, timestamp.tv_usec);
+	if ( vrpn_TimevalDuration(current_time,timestamp) > MAX_TIME_INTERVAL) {
+		fprintf(stderr,"Tracker failed to read... current_time=%ld:%ld, timestamp=%ld:%ld\n",
+				current_time.tv_sec, static_cast<long>(current_time.tv_usec),
+				timestamp.tv_sec, static_cast<long>(timestamp.tv_usec));
 		send_text_message("Too long since last report, resetting", current_time, vrpn_TEXT_ERROR);
 		status = vrpn_TRACKER_FAIL;
 	}

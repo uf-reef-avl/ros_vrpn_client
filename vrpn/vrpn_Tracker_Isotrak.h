@@ -9,18 +9,14 @@
 #ifndef VRPN_TRACKER_ISOTRAK_H
 #define VRPN_TRACKER_ISOTRAK_H
 
-#include <time.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#ifndef _WIN32
-#include <sys/time.h>
-#endif
+#include <stdio.h>                      // for NULL
 
-#include "vrpn_Tracker.h"
-#include "vrpn_Button.h"
-#include "vrpn_Analog.h"
-#include "quat.h"
+#include "vrpn_Configure.h"             // for VRPN_API
+#include "vrpn_Shared.h"                // for timeval
+#include "vrpn_Tracker.h"               // for vrpn_Tracker_Serial
+
+class VRPN_API vrpn_Button_Server;
+class VRPN_API vrpn_Connection;
 
 
 const int vrpn_ISOTRAK_MAX_STATIONS = 2;    // How many stations can exist
@@ -50,7 +46,9 @@ class VRPN_API vrpn_Tracker_Isotrak: public vrpn_Tracker_Serial {
 
   ~vrpn_Tracker_Isotrak();
 
-    
+    /// Add a stylus (with button) to one of the sensors.
+    int add_stylus_button(const char *button_device_name, int sensor);
+
  protected:
   
   virtual int get_report(void);
@@ -60,12 +58,16 @@ class VRPN_API vrpn_Tracker_Isotrak: public vrpn_Tracker_Serial {
   int	do_filter;		//< Should we turn on filtering for pos/orient?
   int	num_stations;		//< How many stations maximum on this Isotrak?
 
+  int   num_resets;		//< How many resets have we tried this time around?
   char	add_reset_cmd[2048];	//< Additional reset commands to be sent
-  vrpn_uint32	REPORT_LEN;	    //< The length that the current report should be
   
   int	set_sensor_output_format(int sensor);
-  int	report_length(int sensor);
 
+  // An Isotrak can have stylus's with buttons on them
+  vrpn_Button_Server   *stylus_buttons[vrpn_ISOTRAK_MAX_STATIONS];
+
+private:
+    void process_binary();
 };
 
 #endif

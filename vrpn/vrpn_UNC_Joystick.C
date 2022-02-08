@@ -1,11 +1,11 @@
-#include "vrpn_UNC_Joystick.h"
+#include <stdio.h>                      // for fprintf, stderr, perror, etc
+#include <string.h>                     // for strlen
+
+#include "vrpn_Connection.h"            // for vrpn_CONNECTION_LOW_LATENCY, etc
 #include "vrpn_Serial.h"
-#include <stdio.h>
-#include <stdlib.h>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
-#include <string.h>
+#include "vrpn_Shared.h"                // for timeval, vrpn_SleepMsecs, etc
+#include "vrpn_Types.h"                 // for vrpn_float64, vrpn_int32
+#include "vrpn_UNC_Joystick.h"
 
 // This class runs the UNC custom serial joystick.  It includes two
 // buttons, a slider, and two 3-axis joysticks.  It is based on a
@@ -14,25 +14,18 @@
 
 static const vrpn_float64 JoyScale[] = {1019, 200, 200, 350, 200, 200, 350};
 
-static long  duration(struct timeval t1, struct timeval t2)
-{
-  if (t2.tv_sec == -1) return 0;
-  return (t1.tv_usec - t2.tv_usec) +
-    1000000L * (t1.tv_sec - t2.tv_sec);
-}
-
 vrpn_Joystick::vrpn_Joystick(char * name, 
 		    vrpn_Connection * c, char * portname,int baud, 
 			     vrpn_float64 update_rate):
       vrpn_Serial_Analog(name, c, portname, baud),
-	  vrpn_Button(name, c)
+	  vrpn_Button_Filter(name, c)
 { 
   num_buttons = 2;  // Has 2 buttons
   num_channel = 7;	// Has a slider and two 3-axis joysticks
   if (update_rate != 0) {
-    MAX_TIME_INTERVAL = (long)(1000000/update_rate);
+    MAX_TIME_INTERVAL = (unsigned long)(1000000/update_rate);
   } else {
-	MAX_TIME_INTERVAL = -1;
+    MAX_TIME_INTERVAL = (unsigned long)(-1);
   }
   status = vrpn_ANALOG_RESETTING;
 }
@@ -84,8 +77,8 @@ void vrpn_Joystick::mainloop(void) {
 	// If it has been longer than the requested report interval
 	// since we sent a report, send a complete report
 	// anyway (a repeat of the previous one).
-	if ( (duration(current_time, vrpn_Analog::timestamp) 
-	     > MAX_TIME_INTERVAL) && (MAX_TIME_INTERVAL != -1) ) {
+	if ( (static_cast<unsigned long>(vrpn_TimevalDuration(current_time, vrpn_Analog::timestamp)) 
+	     > MAX_TIME_INTERVAL) && (MAX_TIME_INTERVAL != (unsigned long)(-1)) ) {
 
 	  // send out the last report again;
 	  report(current_time);
@@ -198,20 +191,20 @@ int vrpn_Joystick::get_report() {
 
 /****************************************************************************/
 /* Decodes bytes as follows:
-     First byte of set recieved (from high order bit down):
+     First byte of set received (from high order bit down):
         -bit == 0 to signify first byte
         -empty bit
         -3 bit channel label
         -3 bits (out of 10) of channel reading (high-order bits)
-     Second byte of set recieved (from high order bit down):
+     Second byte of set received (from high order bit down):
         -bit == 1 to signify second byte
         -7 bits (out of 10) of channel reading (low-order bits)
 */
 
 void vrpn_Joystick::parse (int index, int reset_rest_pos)
 {
-   static unsigned int temp;
-   static unsigned int mask1 = 7, mask2 = 127, left = 1, right = 2;
+   unsigned int temp;
+   static const unsigned int mask1 = 7, mask2 = 127, left = 1, right = 2;
    
    int chan;	// Channel number extracted from report
    int value;	// Integer value extracted from report

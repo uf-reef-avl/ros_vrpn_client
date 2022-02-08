@@ -4,7 +4,7 @@
 // DIO-24, a PCMCIA card, which provides 24-bit digital I/O.  
 // The I/O is accessed in 3 "ports" with 8 bits per port,
 // though the user is protected from that detail.  The
-// user of this class need only request inputs 1 thru 24.
+// user of this class need only request inputs 1 through 24.
 //
 // Unlike the other National Instrument devices currently
 // in vrpn, this uses their new "mx" library.  To access
@@ -38,11 +38,13 @@
 #ifndef VRPN_BUTTON_NI_DIO24_H
 #define VRPN_BUTTON_NI_DIO24_H
 
-#include "vrpn_Button.h"
-#ifdef VRPN_USE_USDIGITAL
-#if defined(_WIN32) || defined(WIN32)
+#include "vrpn_Button.h"                // for vrpn_Button_Filter
+#include "vrpn_Configure.h"             // for VRPN_API
+#include "vrpn_Types.h"                 // for vrpn_int32
+
+class VRPN_API vrpn_Connection;
+#ifdef VRPN_USE_NATIONAL_INSTRUMENTS_MX
 #include <NIDAQmx.h>
-#endif // def(_WIN32) || def(WIN32)
 #endif
 
 class VRPN_API vrpn_Button_NI_DIO24 : public vrpn_Button_Filter {
@@ -63,10 +65,10 @@ class VRPN_API vrpn_Button_NI_DIO24 : public vrpn_Button_Filter {
     virtual void mainloop () ;
 
   private:
-    //  Addresses of the devices
-#ifdef VRPN_USE_USDIGITAL
+  //  Addresses of the devices
+#ifdef VRPN_USE_NATIONAL_INSTRUMENTS_MX
     TaskHandle    _taskHandle ;
-#endif // def(_WIN32) || def(WIN32)
+#endif
 
     /// Sets the number of channels and ports, clamped to maximums if needed.
     /// This should be used before mainloop is ever called.
@@ -74,7 +76,7 @@ class VRPN_API vrpn_Button_NI_DIO24 : public vrpn_Button_Filter {
 
     //  THis handles error reporting, and halts the
     //  program if the error is irrecoverable
-#ifdef VRPN_USE_USDIGITAL
+#ifdef VRPN_USE_NATIONAL_INSTRUMENTS_MX
     void reportError(int32 errnumber, vrpn_bool exitProgram) ;
 #endif // def(_WIN32) || def(WIN32)
 };

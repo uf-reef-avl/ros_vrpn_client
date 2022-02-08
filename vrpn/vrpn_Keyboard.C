@@ -1,8 +1,10 @@
-#include <math.h>
-#include <string.h>
+#include <stdio.h>                      // for fprintf, stderr
+
 #include "vrpn_Keyboard.h"
+#include "vrpn_Shared.h"                // for timeval, vrpn_gettimeofday
+
+class VRPN_API vrpn_Connection;
 #ifdef	_WIN32
-#include <windows.h>
 #pragma comment (lib, "user32.lib")
 #endif
 
@@ -31,8 +33,8 @@ int vrpn_Keyboard::get_report(void)
     struct timeval time;
     vrpn_gettimeofday(&time, NULL); // set timestamp of this event
     timestamp = time;
-    int i;
 #ifdef	_WIN32
+    int i;
     // Read one key state, which will read all of the events
     // and make it possible to read the state of all the keys;
     // We're ignoring the return for this particular key; it

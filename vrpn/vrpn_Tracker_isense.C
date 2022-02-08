@@ -1,3 +1,7 @@
+
+#include "vrpn_Tracker_isense.h"
+
+#ifdef  VRPN_INCLUDE_INTERSENSE
 #include <time.h>
 #include <math.h>
 #include <stdlib.h>
@@ -20,27 +24,13 @@
 #endif
 
 #include "vrpn_Tracker.h"
-#include "vrpn_Tracker_isense.h"
 #include "vrpn_Serial.h"
 #include "vrpn_Shared.h"
+#include "vrpn_MessageMacros.h"         // for VRPN_MSG_INFO, VRPN_MSG_WARNING, VRPN_MSG_ERROR
 #include "quat.h" 
-
-#ifdef  VRPN_INCLUDE_INTERSENSE
 #include "isense.c"
 
 #define MAX_TIME_INTERVAL       (5000000) // max time between reports (usec)
-#define	INCHES_TO_METERS	(2.54/100.0)
-#define PI (3.14159265358979323846)
-#define DEG_TO_RAD (PI/180.)
-#define	FT_INFO(msg)	{ send_text_message(msg, timestamp, vrpn_TEXT_NORMAL) ; if (d_connection) d_connection->send_pending_reports(); }
-#define	FT_WARNING(msg)	{ send_text_message(msg, timestamp, vrpn_TEXT_WARNING) ; if (d_connection) d_connection->send_pending_reports(); }
-#define	FT_ERROR(msg)	{ send_text_message(msg, timestamp, vrpn_TEXT_ERROR) ; if (d_connection) d_connection->send_pending_reports(); }
-
-static	unsigned long	duration(struct timeval t1, struct timeval t2)
-{
-	return (t1.tv_usec - t2.tv_usec) +
-	       1000000L * (t1.tv_sec - t2.tv_sec);
-}
 
 void vrpn_Tracker_InterSense::getTrackerInfo(char *msg)
 {
@@ -124,7 +114,7 @@ m_reset_at_start(reset_at_start)
 	if (additional_reset_commands == NULL) {
 		sprintf(add_reset_cmd, "");
 	} else {
-		strncpy(add_reset_cmd, additional_reset_commands, sizeof(add_reset_cmd)-1);
+		vrpn_strcpy(add_reset_cmd, additional_reset_commands);
 	}
 
 	// Initially, set to no buttons or analogs on the stations.  The
@@ -162,7 +152,7 @@ m_reset_at_start(reset_at_start)
   //for now we just print it out.
   getTrackerInfo(errStr);
   vrpn_gettimeofday(&timestamp, NULL);
-  FT_INFO(errStr);
+  VRPN_MSG_INFO(errStr);
   fprintf(stderr,errStr);	
   
   status =   vrpn_TRACKER_SYNCING;
@@ -183,10 +173,22 @@ vrpn_Tracker_InterSense::~vrpn_Tracker_InterSense()
     // Delete any button and analog devices that were created
     for (i = 0; i < ISD_MAX_STATIONS; i++) {
 		if (is900_buttons[i]) {
-		    delete is900_buttons[i];
+                    try {
+                      delete is900_buttons[i];
+                    } catch (...) {
+                      fprintf(stderr, "vrpn_Tracker_InterSense::~vrpn_Tracker_InterSense(): delete failed\n");
+                      return;
+                    }
+                    is900_buttons[i] = NULL;
 		}
 		if (is900_analogs[i]) {
-			delete is900_analogs[i];
+                    try {
+                      delete is900_analogs[i];
+                    } catch (...) {
+                      fprintf(stderr, "vrpn_Tracker_InterSense::~vrpn_Tracker_InterSense(): delete failed\n");
+                      return;
+                    }
+                    is900_analogs[i] = NULL;
 		}
     }
 #endif
@@ -230,7 +232,7 @@ int vrpn_Tracker_InterSense::set_sensor_output_format(int station)
 		    {
 				sprintf(errStr,"Warning: Your tracker doesn't seem to support the quaternion format - couldn't set station config for Station%d. ",station+1);
 				vrpn_gettimeofday(&timestamp, NULL);
-				FT_WARNING(errStr);
+				VRPN_MSG_WARNING(errStr);
 
 				m_StationInfo[station].AngleFormat = ISD_EULER;
 			}
@@ -245,7 +247,7 @@ int vrpn_Tracker_InterSense::set_sensor_output_format(int station)
 			    {
 					sprintf(errStr,"Warning: Your tracker doesn't seem to support the IS900 timestamps - couldn't set station config for Station%d. ",station+1);
 					vrpn_gettimeofday(&timestamp, NULL);
-					FT_WARNING(errStr);
+					VRPN_MSG_WARNING(errStr);
 					m_StationInfo[station].TimeStamped = FALSE;
 				}
 			}
@@ -256,7 +258,7 @@ int vrpn_Tracker_InterSense::set_sensor_output_format(int station)
 			    {
 					sprintf(errStr,"Warning: Your tracker doesn't seem to support the IS900 buttons/analogs - couldn't set station config for Station%d. ",station+1);
 					vrpn_gettimeofday(&timestamp, NULL);
-					FT_WARNING(errStr);
+					VRPN_MSG_WARNING(errStr);
 					m_StationInfo[station].GetInputs = FALSE;
 				}
 			}
@@ -277,7 +279,7 @@ void vrpn_Tracker_InterSense::reset()
     sprintf(errStr,"InterSense: Failed to open tracker '%s' on COM%d: ISD_OpenTracker returned -1",d_servicename,m_CommPort);
     fprintf(stderr,errStr);
     vrpn_gettimeofday(&timestamp, NULL);
-	FT_ERROR(errStr);
+	VRPN_MSG_ERROR(errStr);
 
     status = vrpn_TRACKER_FAIL;
   }
@@ -308,7 +310,7 @@ void vrpn_Tracker_InterSense::reset()
 	    {
 			sprintf(errStr,"Warning: Your tracker failed executing the additional command string. ");
 			vrpn_gettimeofday(&timestamp, NULL);
-			FT_WARNING(errStr);
+			VRPN_MSG_WARNING(errStr);
 		}
 	}
   
@@ -324,7 +326,7 @@ void vrpn_Tracker_InterSense::reset()
 	    {
 			sprintf(errStr,"Warning: Your tracker failed executing the additional command string. ");
 			vrpn_gettimeofday(&timestamp, NULL);
-			FT_WARNING(errStr);
+			VRPN_MSG_WARNING(errStr);
 		}
 
 		vrpn_gettimeofday(&is900_zerotime, NULL);
@@ -332,7 +334,7 @@ void vrpn_Tracker_InterSense::reset()
 
     // Done with reset.
     vrpn_gettimeofday(&timestamp, NULL);	// Set watchdog now
-    FT_WARNING("Reset Completed (this is good)");
+    VRPN_MSG_WARNING("Reset Completed (this is good)");
 
     status = vrpn_TRACKER_SYNCING;	// We're trying for a new reading
   }
@@ -416,7 +418,7 @@ void vrpn_Tracker_InterSense::get_report(void)
 
 	// Copy the tracker data into our internal storage before sending
 	// (no unit problem as the Position vector is already in meters, see ISD_STATION_STATE_TYPE)
-	// Watch: For some reason, to get consistant rotation and translation axis permutations,
+	// Watch: For some reason, to get consistent rotation and translation axis permutations,
 	//        we need non direct mapping.
         // RMT: Based on a report from Christian Odom, it seems like the Quaternions in the
         //      Isense are QXYZ, whereas in Quatlib (and VRPN) they are XYZQ.  Once these
@@ -433,9 +435,9 @@ void vrpn_Tracker_InterSense::get_report(void)
         } else {
 	        // Just return Euler for now...
 	        // nahon@virtools needs to convert to radians
-		angles[0] = DEG_TO_RAD*data.Station[station].Euler[0];
-		angles[1] = DEG_TO_RAD*data.Station[station].Euler[1];
-		angles[2] = DEG_TO_RAD*data.Station[station].Euler[2];
+		angles[0] = VRPN_DEGREES_TO_RADIANS*data.Station[station].Euler[0];
+		angles[1] = VRPN_DEGREES_TO_RADIANS*data.Station[station].Euler[1];
+		angles[2] = VRPN_DEGREES_TO_RADIANS*data.Station[station].Euler[2];
 
 		q_from_euler(d_quat, angles[0], angles[1], angles[2]);	
 	}
@@ -510,7 +512,7 @@ void vrpn_Tracker_InterSense::mainloop()
       break;
 
     case vrpn_TRACKER_FAIL:
-      FT_WARNING("Tracking failed, trying to reset (try power cycle if more than 4 attempts made)");
+      VRPN_MSG_WARNING("Tracking failed, trying to reset (try power cycle if more than 4 attempts made)");
       status = vrpn_TRACKER_RESETTING;
       break;
   }
@@ -533,9 +535,9 @@ int vrpn_Tracker_InterSense::add_is900_button(const char *button_device_name, in
     }
 
     // Add a new button device and set the pointer to point at it.
-    is900_buttons[sensor] = new vrpn_Button_Server(button_device_name, d_connection, numbuttons);
-    if (is900_buttons[sensor] == NULL) {
-    	FT_ERROR("Cannot open button device");
+    try { is900_buttons[sensor] = new vrpn_Button_Server(button_device_name, d_connection, numbuttons); }
+    catch (...) {
+    	VRPN_MSG_ERROR("Cannot open button device");
     	return -1;
     }
 
@@ -568,9 +570,9 @@ int vrpn_Tracker_InterSense::add_is900_analog(const char *analog_device_name, in
     }
 
     // Add a new analog device and set the pointer to point at it.
-    is900_analogs[sensor] = new vrpn_Clipping_Analog_Server(analog_device_name, d_connection);
-    if (is900_analogs[sensor] == NULL) {
-	      FT_ERROR("Cannot open analog device");
+    try { is900_analogs[sensor] = new vrpn_Clipping_Analog_Server(analog_device_name, d_connection); }
+    catch (...) {
+	      VRPN_MSG_ERROR("Cannot open analog device");
 	      return -1;
     }
 
