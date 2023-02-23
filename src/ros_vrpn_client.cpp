@@ -39,6 +39,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <reef_msgs.msg> //Kristy Added
+
 #include <vrpn_Connection.h>
 #include <vrpn_Tracker.h>
 
@@ -70,6 +72,7 @@ vrpn_TRACKERCB prev_vrpn_data;
 class Rigid_Body {
     private:
         ros::Publisher target_pub;
+        ros::Publisher euler_pub;
         ros::Publisher pose_stamp_pub;
         ros::Publisher ned_target_pub;
         ros::Publisher ned_pose_stamp_pub;
@@ -82,6 +85,7 @@ class Rigid_Body {
                    int port)
         {
             target_pub = nh.advertise<geometry_msgs::TransformStamped>("nwu/pose", 100);
+            euler_pub = nh.advertise<geometry_msgs::PoseStamped>("nwu/euler_angles", 100);
             pose_stamp_pub = nh.advertise<geometry_msgs::PoseStamped>("nwu/pose_stamped",100);
 
             ned_target_pub = nh.advertise<geometry_msgs::TransformStamped>("ned/pose", 100);
@@ -99,11 +103,20 @@ class Rigid_Body {
             br.sendTransform(target_state->target);
             target_pub.publish(target_state->target);
             pose_stamp_pub.publish(target_state->target_pose_stamped);
-
             ned_target_pub.publish(target_state->ned_target);
             ned_pose_stamp_pub.publish(target_state->ned_pose_stamped);
         }
 
+        // void publish_euler_angles(TargetState *target_state)  //Kristy Added
+        // {
+        //     double roll;
+        //     double pitch;
+        //     double yaw;
+        //     //(target_state.linear().transpose(), current_yaw);
+        //     //auto euler = q.toRotationMatrix().eulerAngles(0, 1, 2);
+        //     //std::cout << "Euler from quaternion in roll, pitch, yaw"<< std::endl << euler << std::endl;
+
+        // }
         void step_vrpn()
         {
             this->tracker->mainloop();
@@ -254,6 +267,7 @@ int main(int argc, char* argv[])
         if (fresh_data == true)
         { // only publish when receive data over VRPN.
             tool.publish_target_state(target_state);
+            // tool.publish_euler_angles(euler_angles_conversion)
             fresh_data = false;
         }
         //ros::spinOnce();
