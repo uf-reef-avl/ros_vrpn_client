@@ -93,7 +93,7 @@ include_directories(vrpn Threads rclcpp)
 
 add_executable(ros_vrpn_client src/ros_vrpn_client.cpp vrpn/vrpn_Thread.C vrpn/vrpn_EndpointContainer.C vrpn/quat/vector.c vrpn/quat/matrix.c vrpn/quat/quat.c
 	vrpn/vrpn_Connection.C vrpn/vrpn_Tracker.C vrpn/vrpn_Shared.C vrpn/vrpn_FileConnection.C
-	vrpn/vrpn_BaseClass.C vrpn/vrpn_Serial.C)
+	vrpn/vrpn_BaseClass.C vrpn/vrpn_Serial.C vrpn/quat/quat.c)
 target_link_libraries(ros_vrpn_client pthread)
 ament_target_dependencies(ros_vrpn_client rclcpp tf2 tf2_ros geometry_msgs)
 
