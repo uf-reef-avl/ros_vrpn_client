@@ -1,4 +1,6 @@
 A ROS package to get data from the Optitrack motion capture system
+Source for ROS2 Updates: 
+https://github.com/vrpn/vrpn 
 
 Installation
 ------------
