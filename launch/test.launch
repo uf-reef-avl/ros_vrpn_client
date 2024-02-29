@@ -1,5 +1,5 @@
 <launch>
-    <arg name="name" default="hbot"/>
+    <arg name="name" default="wren_a2"/>
     <node pkg="ros_vrpn_client" exec="ros_vrpn_client" name="$(var name)">
         <param name="vrpn_ip" value="192.168.1.104"/>
         <param name="my_int" value="3883"/>

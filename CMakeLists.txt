@@ -89,7 +89,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-include_directories(vrpn Threads rclcpp)
+include_directories(include vrpn vrpn/include vrpn/quat Threads rclcpp)
 
 add_executable(ros_vrpn_client src/ros_vrpn_client.cpp vrpn/vrpn_Thread.C vrpn/vrpn_EndpointContainer.C vrpn/quat/vector.c vrpn/quat/matrix.c vrpn/quat/quat.c
 	vrpn/vrpn_Connection.C vrpn/vrpn_Tracker.C vrpn/vrpn_Shared.C vrpn/vrpn_FileConnection.C
