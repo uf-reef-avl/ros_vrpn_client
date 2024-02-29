@@ -3,14 +3,14 @@ A ROS package to get data from the Optitrack motion capture system
 Installation
 ------------
 
-This installation assumes you have ROS installed and created a catkin workspace on your computer
+This installation assumes you have ROS installed and created a colcon workspace on your computer
 
-1. In the command terminal, move to your catkin workspace's src directory (cd catkin_ws/src)
+1. In the command terminal, move to your catkin workspace's src directory (cd colcon_ws/src)
 
 2. Once inside the catkin src directory type: git clone {this url repo}
 	and enter in your GitLab credentials when prompted
 
-3. Either move back out of your catkin src directory to use catkin_make or run catkin_build (ignore the warnings)
+3. Either move back out of your catkin src directory to use colcon build (ignore the warnings)
 
 4. Once done you can begin to use vrpn node with motive and optitrack
 
@@ -37,7 +37,7 @@ Important notes before running
 
 	where robotrigidbody is the name of the robot's rigid body set in motive or optitrack.
 
-	To see them when the vrpn client is active type: rostopic list
+	To see them when the vrpn client is active type: ros2 topic list
 
 
 Running the code
@@ -45,13 +45,14 @@ Running the code
 
 	geometry_msg/TransformedStamped (/robotrigidbody/ned or nwu/pose)
 
--To run vrpn from the command line type: roslaunch ros_vrpn_client test.launch name:=robotrigidbody
+-To run vrpn from the command line type: ros2 run ros_vrpn_client ros_vrpn_client --ros-args -r __node:=robotrigidbody -p vrpn_ip:="192.168.1.104" -p my_int:=3883
 	where robotrigidbody is the name of the robot's rigid body set in motive or optitrack.
 
 -To run vrpn from within a launch file add:
 
-	<include file = "$(find ros_vrpn_client)/launch/test.launch">
-    <arg name = "name" value="$(robotrigidbody)"/>
-	</include>
+    <node pkg="ros_vrpn_client" exec="ros_vrpn_client" name="$(var name)">
+        <param name="vrpn_ip" value="192.168.1.104"/>
+        <param name="my_int" value="3883"/>
+    </node>
 
 	Please take a look at the example launch file

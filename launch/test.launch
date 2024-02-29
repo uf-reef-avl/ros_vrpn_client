@@ -1,6 +1,7 @@
 <launch>
-<arg name="name" default="magCheck" />
-    
-<node pkg="ros_vrpn_client" name="$(arg name)" type="ros_vrpn_client" args="_vrpn_server_ip:=192.168.1.104" required="true" output="screen"/>
-
+    <arg name="name" default="hbot"/>
+    <node pkg="ros_vrpn_client" exec="ros_vrpn_client" name="$(var name)">
+        <param name="vrpn_ip" value="192.168.1.104"/>
+        <param name="my_int" value="3883"/>
+    </node>
 </launch>
